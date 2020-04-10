@@ -10,6 +10,6 @@
 0                                   ! Restart (1 for restart)
 1                                   ! 1:TGV, 2:COVO
 1                                   ! 1:Uniform, 2:Distorted, 3:Sinusoidal
-1 0 1                               ! perI, perJ, perK (boundary)
+1 1 1 ! keep it 1,1,1 (NA for IBM)  ! perI, perJ, perK (non-periodic boundary case (Visbal 1998)) (not implemented in filtering and compact schemes) 
 2 2                                 ! Boundary scheme for points 1,NI and 2,NI-1
 1                                   ! 1:Explicit, 2:Compact
