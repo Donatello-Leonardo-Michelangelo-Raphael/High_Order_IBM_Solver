@@ -8,7 +8,7 @@
 		  use declare_variables
 		  implicit none
 		  
-		  integer ii,node,elem
+		  integer iii,node,elem
 		  character(len=300) dummy
 		  
 		  OPEN(finput, file='input.dat', form = 'formatted')
@@ -55,7 +55,7 @@
 		  
 		  open(fcyl,file='cylinder-normals.dat',form='formatted')
 
-		  do ii = 1,14
+		  do iii = 1,14
 			read(fcyl,*) dummy
 		  enddo	
 
@@ -168,7 +168,7 @@
 		  allocate(j_loc)
 		  allocate(k_loc)
 		  allocate(nbl_loc)
-		  
+		  allocate(no_ghost_pts)
 
       END 
 !********************************************************************************************
@@ -185,9 +185,9 @@
 			  do j = 1,NJ(nblocks)
 			  do i = 1,NI(nblocks)
 			  
-					Xgrid(i,j,k,nbl) = Lx*(i-1.d0)/(NI(nbl)-1.d0)
-					Ygrid(i,j,k,nbl) = Ly*(j-1.d0)/(NJ(nbl)-1.d0)
-			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0)
+					Xgrid(i,j,k,nbl) = Lx*(i-1.d0)/(NI(nbl)-1.d0) - Lx/2
+					Ygrid(i,j,k,nbl) = Ly*(j-1.d0)/(NJ(nbl)-1.d0) - Ly/2
+			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0) - Lz/2
 			  
 			  enddo
 			  enddo
@@ -277,6 +277,8 @@
 		  enddo		  
 	  
 		  call ibm_type(xbg,ybg,zbg)
+		  
+		  call ghost_points()
 	  
 	  
 	  END
@@ -287,22 +289,22 @@ SUBROUTINE get_loc_index(indx)
 
 	use declare_variables
 
-	integer indx,flag
+	integer flag
 	
 	flag = 0
 
-	do nbl = 1,nblocks
-	do k = 1,NK(nbl)
-	do j = 1,NJ(nbl)
-	do i = 1,NI(nbl)
+	do nnbbll = 1,nblocks
+	do kk = 1,NK(nbl)
+	do jj = 1,NJ(nbl)
+	do ii = 1,NI(nbl)
 	
 		flag = flag + 1
 		if(flag.eq.indx) then
 		
-			i_loc = i
-			j_loc = j
-			k_loc = k
-			nbl_loc = nbl
+			i_loc = ii
+			j_loc = jj
+			k_loc = kk
+			nbl_loc = nnbbll
 		
 		endif
 	
