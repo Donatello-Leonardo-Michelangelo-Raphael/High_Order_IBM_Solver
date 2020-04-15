@@ -8,6 +8,9 @@
 		  use declare_variables
 		  implicit none
 		  
+		  integer ii,node,elem
+		  character(len=300) dummy
+		  
 		  OPEN(finput, file='input.dat', form = 'formatted')
 		  
 		  read(finput,*) Lx,Ly,Lz
@@ -37,6 +40,36 @@
 		  close(finput)
 		  
 		  print*, "The length of block ,nprims and nconserv are" ,nblocks,nprims,nconserv
+		  
+		  
+		  ! IBM
+		  
+		  allocate(xbg(nodes))
+		  allocate(ybg(nodes))
+		  allocate(zbg(nodes))
+		  allocate(xbn(nodes))
+		  allocate(ybn(nodes))
+		  allocate(zbn(nodes))
+		  
+  		  allocate(connect(elements,3))
+		  
+		  open(fcyl,file='cylinder-normals.dat',form='formatted')
+
+		  do ii = 1,14
+			read(fcyl,*) dummy
+		  enddo	
+
+		  do node = 1,nodes
+			read(fcyl,*) xbg(node),ybg(node),zbg(node),xbn(node),ybn(node),zbn(node)
+		  enddo
+
+		  do elem = 1,elements
+			read(fcyl,*) (connect(elem,i),i=1,3)
+		  enddo
+		  
+		  close(fcyl)
+		  
+		  
 	  
       END
 !********************************************************************************************
@@ -124,6 +157,18 @@
 		
 		  ALLOCATE(swirl_vel_init(NImax,nbl))
 		  ALLOCATE(swirl_vel_final(NImax,nbl))
+		  
+		  
+		  ! IBM
+		  
+		  allocate(num_share_elems(nodes))
+		  allocate(type_ibm(NImax,NJmax,NKmax,nblocks))
+		  allocate(maxshare)
+		  allocate(i_loc)
+		  allocate(j_loc)
+		  allocate(k_loc)
+		  allocate(nbl_loc)
+		  
 
       END 
 !********************************************************************************************
@@ -199,6 +244,76 @@
 	  
       END 
 !********************************************************************************************
+
+!********************* IBM PREPROCESSING ********************************************************
+	  SUBROUTINE ibm_preprocessing()
+	  
+		  use declare_variables
+		  implicit none
+	  
+		  integer elem,node
+		  
+		  num_share_elems = 0
+		  
+		  do elem = 1,elements
+		  do i = 1,3
+			node = connect(elem,i)
+			num_share_elems(node) = num_share_elems(node) + 1
+		  enddo
+		  enddo
+
+		  maxshare = maxval(num_share_elems)
+		  allocate(ind_share_elems(nodes,maxshare))
+		  
+		  num_share_elems = 0
+		  ind_share_elems = 0
+
+		  do elem = 1,elements
+		  do i = 1,3
+			node = connect(elem,i)
+			num_share_elems(node) = num_share_elems(node) + 1
+			ind_share_elems(node,num_share_elems(node)) = elem
+		  enddo
+		  enddo		  
+	  
+		  call ibm_type(xbg,ybg,zbg)
+	  
+	  
+	  END
+!********************************************************************************************
+
+!********************* LOCAL INDEX ****************************************
+SUBROUTINE get_loc_index(indx)
+
+	use declare_variables
+
+	integer indx,flag
+	
+	flag = 0
+
+	do nbl = 1,nblocks
+	do k = 1,NK(nbl)
+	do j = 1,NJ(nbl)
+	do i = 1,NI(nbl)
+	
+		flag = flag + 1
+		if(flag.eq.indx) then
+		
+			i_loc = i
+			j_loc = j
+			k_loc = k
+			nbl_loc = nbl
+		
+		endif
+	
+	enddo
+	enddo
+	enddo
+	enddo
+
+END
+!********************************************************************************************
+
 
 !********************* INITIALIZE_NON_DIMENSIONALIZE ****************************************
       SUBROUTINE INITIALIZE_NON_DIMENSIONALIZE()
