@@ -28,6 +28,9 @@
 !****** GENERATE GRID ******************************************************
       call GENERATE_GRID()
       print*, 'Grid Generation Done'	  
+!****** IBM PREPROCESSING ******************************************************
+	  call ibm_preprocessing()
+	  print*, 'IBM Preprocessing Done'
 !******** Initialize and Non-dimensionalize arrays *****************************
       print*, 'Initializing and non-dimensionalizing arrays....'
       call INITIALIZE_NON_DIMENSIONALIZE()
