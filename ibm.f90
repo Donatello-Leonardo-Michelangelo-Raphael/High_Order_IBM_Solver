@@ -20,7 +20,8 @@ SUBROUTINE ibm_type(x,y,z)
 	
 	implicit none
 	
-	integer :: near_node_idx,near_node_dist,nbrhd_pts_ibm
+	integer :: near_node_idx,near_node_dist,nbrhd_pts_ibm=1
+	integer :: node
 	
 	real,dimension(nodes) :: x,y,z
 	real xp,yp,zp,xbp,ybp,zbp,xbnp,ybnp,zbnp,dot_p
@@ -28,12 +29,11 @@ SUBROUTINE ibm_type(x,y,z)
 	
 	type(kdtree2_result),allocatable :: results_ibm(:)
 	type(kdtree2),pointer :: tree_ibm
-
-	n_dim = 3
 	
 	allocate(global_ibm(n_dim,nodes))
 	allocate(qu_ibm(n_dim))
 	allocate(results_ibm(nbrhd_pts_ibm))
+
 	
 	do node = 1,nodes
 		global_ibm(1,node) = x(node)
@@ -53,7 +53,7 @@ SUBROUTINE ibm_type(x,y,z)
 		qu_ibm(3) = zgrid(i,j,k,nbl) ! comment this for n_dim = 2
 
 		nbrhd_pts_ibm = 1
-		
+
 		call kdtree2_n_nearest(tree_ibm,qu_ibm,nbrhd_pts_ibm,results_ibm)
 		
 		near_node_idx = results_ibm(1)%idx ! reuslts_ibm is a struct with %idx and %dis
@@ -82,8 +82,6 @@ SUBROUTINE ibm_type(x,y,z)
 	enddo
 
 END
-
-
 
 SUBROUTINE ghost_point()
 
