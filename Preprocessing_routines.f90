@@ -169,6 +169,9 @@
 		  allocate(k_loc)
 		  allocate(nbl_loc)
 		  allocate(no_ghost_pts)
+		  allocate(global_index)
+		  allocate(no_body_pts)
+		  allocate(no_fluid_pts)
 
       END 
 !********************************************************************************************
@@ -187,7 +190,7 @@
 			  
 					Xgrid(i,j,k,nbl) = Lx*(i-1.d0)/(NI(nbl)-1.d0) - Lx/2
 					Ygrid(i,j,k,nbl) = Ly*(j-1.d0)/(NJ(nbl)-1.d0) - Ly/2
-			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0) - Lz/2
+			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0) 
 			  
 			  enddo
 			  enddo
@@ -279,9 +282,41 @@
 		  call ibm_type(xbg,ybg,zbg)
 		  
 		  call ghost_points()
+		  
+		  call boundary_intercept(xbg,ybg,zbg)
 	  
 	  
 	  END
+!********************************************************************************************
+
+!********************* GLOBAL INDEX ****************************************
+SUBROUTINE get_global_index(i_local,j_local,k_local,nbl_local)
+
+	use declare_variables
+
+	integer flag,i_local,j_local,k_local,nbl_local
+	
+	flag = 0
+	
+	do nnbbll = 1,nblocks
+	do kk = 1,NK(nnbbll)
+	do jj = 1,NJ(nnbbll)
+	do ii = 1,NI(nnbbll)
+	
+		flag = flag + 1
+	
+		if(i_local.eq.ii.and.j_local.eq.jj.and.k_local.eq.kk.and.nbl_local.eq.nnbbll) then
+		
+			global_index = flag
+		
+		endif
+	
+	enddo
+	enddo
+	enddo
+	enddo
+
+END
 !********************************************************************************************
 
 !********************* LOCAL INDEX ****************************************
@@ -294,9 +329,9 @@ SUBROUTINE get_loc_index(indx)
 	flag = 0
 
 	do nnbbll = 1,nblocks
-	do kk = 1,NK(nbl)
-	do jj = 1,NJ(nbl)
-	do ii = 1,NI(nbl)
+	do kk = 1,NK(nnbbll)
+	do jj = 1,NJ(nnbbll)
+	do ii = 1,NI(nnbbll)
 	
 		flag = flag + 1
 		if(flag.eq.indx) then
@@ -315,7 +350,6 @@ SUBROUTINE get_loc_index(indx)
 
 END
 !********************************************************************************************
-
 
 !********************* INITIALIZE_NON_DIMENSIONALIZE ****************************************
       SUBROUTINE INITIALIZE_NON_DIMENSIONALIZE()
