@@ -8,6 +8,9 @@
 		  use declare_variables
 		  implicit none
 		  
+		  integer iii,node,elem
+		  character(len=300) dummy
+		  
 		  OPEN(finput, file='input.dat', form = 'formatted')
 		  
 		  read(finput,*) Lx,Ly,Lz
@@ -37,6 +40,36 @@
 		  close(finput)
 		  
 		  print*, "The length of block ,nprims and nconserv are" ,nblocks,nprims,nconserv
+		  
+		  
+		  ! IBM
+		  
+		  allocate(xbg(nodes))
+		  allocate(ybg(nodes))
+		  allocate(zbg(nodes))
+		  allocate(xbn(nodes))
+		  allocate(ybn(nodes))
+		  allocate(zbn(nodes))
+		  
+  		  allocate(connect(elements,3))
+		  
+		  open(fcyl,file='cylinder-normals.dat',form='formatted')
+
+		  do iii = 1,14
+			read(fcyl,*) dummy
+		  enddo	
+
+		  do node = 1,nodes
+			read(fcyl,*) xbg(node),ybg(node),zbg(node),xbn(node),ybn(node),zbn(node)
+		  enddo
+
+		  do elem = 1,elements
+			read(fcyl,*) (connect(elem,i),i=1,3)
+		  enddo
+		  
+		  close(fcyl)
+		  
+		  
 	  
       END
 !********************************************************************************************
@@ -124,6 +157,21 @@
 		
 		  ALLOCATE(swirl_vel_init(NImax,nbl))
 		  ALLOCATE(swirl_vel_final(NImax,nbl))
+		  
+		  
+		  ! IBM
+		  
+		  allocate(num_share_elems(nodes))
+		  allocate(type_ibm(NImax,NJmax,NKmax,nblocks))
+		  allocate(maxshare)
+		  allocate(i_loc)
+		  allocate(j_loc)
+		  allocate(k_loc)
+		  allocate(nbl_loc)
+		  allocate(no_ghost_pts)
+		  allocate(global_index)
+		  allocate(no_body_pts)
+		  allocate(no_fluid_pts)
 
       END 
 !********************************************************************************************
@@ -140,9 +188,9 @@
 			  do j = 1,NJ(nblocks)
 			  do i = 1,NI(nblocks)
 			  
-					Xgrid(i,j,k,nbl) = Lx*(i-1.d0)/(NI(nbl)-1.d0)
-					Ygrid(i,j,k,nbl) = Ly*(j-1.d0)/(NJ(nbl)-1.d0)
-			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0)
+					Xgrid(i,j,k,nbl) = Lx*(i-1.d0)/(NI(nbl)-1.d0) - Lx/2
+					Ygrid(i,j,k,nbl) = Ly*(j-1.d0)/(NJ(nbl)-1.d0) - Ly/2
+			 		Zgrid(i,j,k,nbl) = Lz*(k-1.d0)/(NK(nbl)-1.d0) 
 			  
 			  enddo
 			  enddo
@@ -198,6 +246,109 @@
 		  endif
 	  
       END 
+!********************************************************************************************
+
+!********************* IBM PREPROCESSING ********************************************************
+	  SUBROUTINE ibm_preprocessing()
+	  
+		  use declare_variables
+		  implicit none
+	  
+		  integer elem,node
+		  
+		  num_share_elems = 0
+		  
+		  do elem = 1,elements
+		  do i = 1,3
+			node = connect(elem,i)
+			num_share_elems(node) = num_share_elems(node) + 1
+		  enddo
+		  enddo
+
+		  maxshare = maxval(num_share_elems)
+		  allocate(ind_share_elems(nodes,maxshare))
+		  
+		  num_share_elems = 0
+		  ind_share_elems = 0
+
+		  do elem = 1,elements
+		  do i = 1,3
+			node = connect(elem,i)
+			num_share_elems(node) = num_share_elems(node) + 1
+			ind_share_elems(node,num_share_elems(node)) = elem
+		  enddo
+		  enddo		  
+	  
+		  call ibm_type(xbg,ybg,zbg)
+		  
+		  call ghost_points()
+		  
+		  call boundary_intercept(xbg,ybg,zbg)
+	  
+	  
+	  END
+!********************************************************************************************
+
+!********************* GLOBAL INDEX ****************************************
+SUBROUTINE get_global_index(i_local,j_local,k_local,nbl_local)
+
+	use declare_variables
+
+	integer flag,i_local,j_local,k_local,nbl_local
+	
+	flag = 0
+	
+	do nnbbll = 1,nblocks
+	do kk = 1,NK(nnbbll)
+	do jj = 1,NJ(nnbbll)
+	do ii = 1,NI(nnbbll)
+	
+		flag = flag + 1
+	
+		if(i_local.eq.ii.and.j_local.eq.jj.and.k_local.eq.kk.and.nbl_local.eq.nnbbll) then
+		
+			global_index = flag
+		
+		endif
+	
+	enddo
+	enddo
+	enddo
+	enddo
+
+END
+!********************************************************************************************
+
+!********************* LOCAL INDEX ****************************************
+SUBROUTINE get_loc_index(indx)
+
+	use declare_variables
+
+	integer flag
+	
+	flag = 0
+
+	do nnbbll = 1,nblocks
+	do kk = 1,NK(nnbbll)
+	do jj = 1,NJ(nnbbll)
+	do ii = 1,NI(nnbbll)
+	
+		flag = flag + 1
+		if(flag.eq.indx) then
+		
+			i_loc = ii
+			j_loc = jj
+			k_loc = kk
+			nbl_loc = nnbbll
+		
+		endif
+	
+	enddo
+	enddo
+	enddo
+	enddo
+
+END
 !********************************************************************************************
 
 !********************* INITIALIZE_NON_DIMENSIONALIZE ****************************************

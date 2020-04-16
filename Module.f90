@@ -5,7 +5,7 @@
 							fswirl_error = 6
 	  integer  nblocks, NImax, NJmax, NKmax
 	  integer, allocatable :: NI(:), NJ(:), NK(:)
-	  integer  nbl, i, j,k,n
+	  integer  nbl, i, j,k,n,ii,jj,kk,nnbbll
 	  integer iter,nsteps, nprims, nconserv
 	  
 	  ! Discretization scheme coefficients
@@ -63,6 +63,23 @@
 	  real,allocatable :: swirl_vel_final(:,:)
 	  
 	  real,allocatable :: fdisc1(:),fdisc2(:)
+	  
+	  ! IBM 
+	  
+	  integer,parameter :: fcyl=10,nodes=1077,elements=1436,n_dim=3 ! declare_variables
+	  integer,allocatable :: num_share_elems(:),ind_share_elems(:,:) ! declare_variables
+	  real,allocatable :: xbg(:),ybg(:),zbg(:),xbn(:),ybn(:),zbn(:) ! declare_variables
+	  real,allocatable :: connect(:,:) ! declare_variables
+	  integer,allocatable :: type_ibm(:,:,:,:)
+	  integer,allocatable :: maxshare,i_loc,j_loc,k_loc,nbl_loc
+	  real,allocatable :: ghost_pt(:,:)
+	  integer,allocatable :: ghost_pt_idx(:)
+	  integer,allocatable :: no_ghost_pts
+	  
+	  
+	  
+	  
+	  
 	  
 	  
       END MODULE
