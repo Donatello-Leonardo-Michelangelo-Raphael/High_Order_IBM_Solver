@@ -66,15 +66,22 @@
 	  
 	  ! IBM 
 	  
+	  integer, parameter :: dp=kind(0.d0)
 	  integer,parameter :: fcyl=10,nodes=1077,elements=1436,n_dim=3 ! declare_variables
 	  integer,allocatable :: num_share_elems(:),ind_share_elems(:,:) ! declare_variables
 	  real,allocatable :: xbg(:),ybg(:),zbg(:),xbn(:),ybn(:),zbn(:) ! declare_variables
 	  real,allocatable :: connect(:,:) ! declare_variables
 	  integer,allocatable :: type_ibm(:,:,:,:)
-	  integer,allocatable :: maxshare,i_loc,j_loc,k_loc,nbl_loc
+	  integer,allocatable :: maxshare,i_loc,j_loc,k_loc,nbl_loc,global_index
 	  real,allocatable :: ghost_pt(:,:)
 	  integer,allocatable :: ghost_pt_idx(:)
-	  integer,allocatable :: no_ghost_pts
+	  integer,allocatable :: no_ghost_pts,no_body_pts,no_fluid_pts,no_vicinity_pts
+	  real,allocatable :: BII(:,:)
+	  real,allocatable :: vicinity_pts(:,:),R
+	  real(dp),allocatable :: W(:,:,:),V(:,:,:),p_i(:,:,:),A_matrix(:,:,:)
+	  integer,allocatable :: flag_nn_alloc,N_vandermonde,L_N,flag_vandermonde_alloc
+	  integer,allocatable :: flag_pi_alloc,flag_A_alloc
+	  
 	  
 	  
 	  
