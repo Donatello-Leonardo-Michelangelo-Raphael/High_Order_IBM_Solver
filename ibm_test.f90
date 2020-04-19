@@ -111,7 +111,6 @@ SUBROUTINE ibm_type(x,y,z)
 END
 
 
-
 SUBROUTINE ghost_points()
 
 	use declare_variables	
@@ -247,9 +246,6 @@ SUBROUTINE ghost_points()
 	print*,'Number of Ghost Points :', no_ghost_pts
 	
 END
-
-
-
 
 
 SUBROUTINE boundary_intercept(x,y,z)
@@ -460,19 +456,19 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 	no_vicinity_pts = vicinity_pts_iter
 	vicinity_pts_iter = 0
 
-	if(flag_nn_alloc.eq.0) then
-		allocate(vicinity_pts(3,no_vicinity_pts))
-	endif
-
+	allocate(vicinity_pts(3,no_vicinity_pts))
+	allocate(vicinity_pt_idx(no_vicinity_pts))
+	
 	do indx = 1,nbrhd_pts
 		near_node = results(indx)%idx
 		dist = results(indx)%dis
 		call get_loc_index(near_node)
 		if(type_ibm(i_loc,j_loc,k_loc,nbl_loc).eq.1) then
 			vicinity_pts_iter = vicinity_pts_iter + 1
-			vicinity_pts(1,vicinity_pts_iter) = Xgrid(i,j,k,nbl)
-			vicinity_pts(2,vicinity_pts_iter) = Ygrid(i,j,k,nbl)
-			vicinity_pts(3,vicinity_pts_iter) = Zgrid(i,j,k,nbl)
+			vicinity_pt_idx(vicinity_pts_iter) = near_node
+			vicinity_pts(1,vicinity_pts_iter) = Xgrid(i_loc,j_loc,k_loc,nbl_loc)
+			vicinity_pts(2,vicinity_pts_iter) = Ygrid(i_loc,j_loc,k_loc,nbl_loc)
+			vicinity_pts(3,vicinity_pts_iter) = Zgrid(i_loc,j_loc,k_loc,nbl_loc)
 			if(R.le.dist) then
 				R = dist
 			endif
@@ -482,7 +478,6 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 	flag_nn_alloc = 1
 
 END
-
 
 
 SUBROUTINE matrix_calculations()
@@ -495,7 +490,7 @@ SUBROUTINE matrix_calculations()
 
 	
 	
-	integer nbrhd_pts,total_comp_pts,pp,qq,LWORK,INFO
+	integer nbrhd_pts,pp,qq,LWORK,INFO
 	real xbi,ybi,zbi,xgp,ygp,zgp
 	real,allocatable :: prime_coord(:,:)
 	real(dp),allocatable :: S(:),U(:,:),VT(:,:),WORK(:),p_inv(:,:)
@@ -512,16 +507,23 @@ SUBROUTINE matrix_calculations()
 	JOBU = 'S'
 	JOBVT = 'S'
 	
-	allocate(prime_coord(3,total_comp_pts))
-	allocate(W(total_comp_pts,total_comp_pts,no_ghost_pts))
+	allocate(dim_A(2,no_ghost_pts))
+	allocate(A_matrix(nbrhd_pts,nbrhd_pts,no_ghost_pts))
 	
+	A_matrix = 0
+
 	do pp = 1,no_ghost_pts
 
 		xbi = BII(1,pp)
 		ybi = BII(2,pp)
 		zbi = BII(3,pp)
-		
+
 		call nn_fluid(nbrhd_pts,xbi,ybi,zbi)
+
+		total_comp_pts = no_vicinity_pts + 1
+
+		allocate(prime_coord(3,total_comp_pts))
+		allocate(W(total_comp_pts,total_comp_pts))
 		
 		xgp = ghost_pt(1,pp)
 		ygp = ghost_pt(2,pp)
@@ -530,37 +532,23 @@ SUBROUTINE matrix_calculations()
 		prime_coord(1,1) = xgp - xbi
 		prime_coord(2,1) = ygp - ybi
 		prime_coord(3,1) = zgp - zbi
-		W(1,1,pp) = 0.5*(1+cos(3.141*(prime_coord(1,1)**2+prime_coord(2,1)**2+prime_coord(3,1)**2)**0.5/R))
-		
+		W(1,1) = 0.5*(1+cos(3.141*(prime_coord(1,1)**2+prime_coord(2,1)**2+prime_coord(3,1)**2)**0.5/R))
+
 		do qq = 2,total_comp_pts
 			
 			prime_coord(1,qq) = vicinity_pts(1,qq-1) - xbi
 			prime_coord(2,qq) = vicinity_pts(2,qq-1) - ybi
 			prime_coord(3,qq) = vicinity_pts(3,qq-1) - zbi
-			W(qq,qq,pp) = 0.5*(1+cos(3.141*(prime_coord(1,qq)**2+prime_coord(2,qq)**2+prime_coord(3,qq)**2)**0.5/R))
+			W(qq,qq) = 0.5*(1+cos(3.141*(prime_coord(1,qq)**2+prime_coord(2,qq)**2+prime_coord(3,qq)**2)**0.5/R))
 			
 		enddo
-		
-		call ibm_coeff_vandermonde(pp,prime_coord,total_comp_pts)
-		
+
+		call ibm_coeff_vandermonde(prime_coord)
+		allocate(p_i(total_comp_pts,L_N))
+
 		LWORK = max(1,5*min(total_comp_pts,L_N),3*min(total_comp_pts,L_N)+max(total_comp_pts,L_N))
 
-		if(flag_pi_alloc.eq.0) then ! deallocate these and reset flag for updated total_comp_pts
-			allocate(p_i(total_comp_pts,L_N,no_ghost_pts))
-			!allocate(p_inv(total_comp_pts,L_N))
-			!allocate(S(min(L_N,total_comp_pts)))
-			!allocate(U(total_comp_pts,min(L_N,total_comp_pts)))
-			!allocate(VT(min(L_N,total_comp_pts),L_N))
-			flag_pi_alloc = 1
-		endif
-		
-		if(flag_A_alloc.eq.0) then
-			allocate(A_matrix(L_N,total_comp_pts,no_ghost_pts))
-			flag_A_alloc = 1
-		endif
-		
-		p_i(:,:,pp) = matmul(W(:,:,pp),V(:,:,pp))
-		p_inv = p_i(:,:,pp)
+		p_i = matmul(W,V)
 
 		allocate(S(min(total_comp_pts,L_N)))
 		allocate(U(total_comp_pts,min(L_N,total_comp_pts)))
@@ -569,15 +557,18 @@ SUBROUTINE matrix_calculations()
 		allocate(sig(min(total_comp_pts,L_N)))
 		allocate(sig_plus(min(total_comp_pts,L_N),min(total_comp_pts,L_N)))
 		
+		dim_A(1,pp) = L_N
+		dim_A(2,pp) = total_comp_pts
+		
 		sig_plus = 0
 
 		LWORK = -1
-		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i(:,:,pp), &
+		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i, &
 			total_comp_pts,S,U,total_comp_pts,VT,min(L_N,total_comp_pts),dummy,LWORK,INFO)
 
 		allocate(WORK(int(dummy(1,1))))
 		LWORK = max(1,int(dummy(1,1)),5*min(total_comp_pts,L_N),3*min(total_comp_pts,L_N)+max(total_comp_pts,L_N))
-		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i(:,:,pp), &
+		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i, &
 			total_comp_pts,S,U,total_comp_pts,VT,min(L_N,total_comp_pts),WORK,LWORK,INFO)
 
 		do i = 1,min(L_N,total_comp_pts)
@@ -590,7 +581,9 @@ SUBROUTINE matrix_calculations()
 			endif
 		enddo
 		
-		A_matrix(:,:,pp) = matmul(matmul(matmul(transpose(VT),sig_plus),transpose(U)),W(:,:,pp))
+		!print*,maxval(s)/maxval(sig_plus),info
+
+		A_matrix(1:dim_A(1,pp),1:dim_A(2,pp),pp) = matmul(matmul(matmul(transpose(VT),sig_plus),transpose(U)),W)
 
 		deallocate(WORK)
 		deallocate(S)
@@ -598,7 +591,15 @@ SUBROUTINE matrix_calculations()
 		deallocate(VT)
 		
 		deallocate(sig)
-		deallocate(sig_plus)		
+		deallocate(sig_plus)
+
+		deallocate(p_i)
+		deallocate(W)
+		deallocate(V)
+		deallocate(prime_coord)
+		
+		deallocate(vicinity_pts)
+		deallocate(vicinity_pt_idx)
 	
 	enddo
 
@@ -607,20 +608,18 @@ SUBROUTINE matrix_calculations()
 END	
 
 
-SUBROUTINE ibm_coeff_vandermonde(pp,prime_coord,total_comp_pts)
+SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 
 ! L_N is a global variable
 ! V is a global variable
 
 	use declare_variables
 	implicit none
-	
 	real,dimension(3,total_comp_pts) :: prime_coord
-	integer qq,pp,total_comp_pts
+	integer qq,pp
 	
 	N_vandermonde = 3
 	
-	
 	if(N_vandermonde.eq.1.and.n_dim.eq.2) then
 		L_N = 3
 
@@ -647,145 +646,143 @@ SUBROUTINE ibm_coeff_vandermonde(pp,prime_coord,total_comp_pts)
 		
 	endif
 	
-	if(flag_vandermonde_alloc.eq.0) then
-		allocate(V(total_comp_pts,L_N,no_ghost_pts))
-	endif
+	allocate(V(total_comp_pts,L_N))
 	
 	
 	if(N_vandermonde.eq.1.and.n_dim.eq.2) then
 		L_N = 3
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
 		enddo
 	elseif(N_vandermonde.eq.1.and.n_dim.eq.3) then
 		L_N = 4
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(3,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(3,qq)
 		enddo
 	elseif(N_vandermonde.eq.2.and.n_dim.eq.2) then
 		L_N = 6
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(1,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
 		enddo
 	elseif(N_vandermonde.eq.2.and.n_dim.eq.3) then
 		L_N = 10
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(3,qq)
-			V(qq,5,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7,pp) = prime_coord(3,qq)*prime_coord(3,qq)
-			V(qq,8,pp) = prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,9,pp) = prime_coord(2,qq)*prime_coord(3,qq)
-			V(qq,10,pp) = prime_coord(3,qq)*prime_coord(1,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
 		enddo
 	elseif(N_vandermonde.eq.3.and.n_dim.eq.2) then
 		L_N = 10
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(1,qq)
-			V(qq,7,pp) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,8,pp) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,9,pp) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,10,pp) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
+			V(qq,7) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,8) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,9) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
 		enddo
 	elseif(N_vandermonde.eq.3.and.n_dim.eq.3) then
 		L_N = 20
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(3,qq)
-			V(qq,5,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7,pp) = prime_coord(3,qq)*prime_coord(3,qq)
-			V(qq,8,pp) = prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,9,pp) = prime_coord(2,qq)*prime_coord(3,qq)
-			V(qq,10,pp) = prime_coord(3,qq)*prime_coord(1,qq)
-			V(qq,11,pp) = prime_coord(1,qq)**3
-			V(qq,12,pp) = prime_coord(2,qq)**3
-			V(qq,13,pp) = prime_coord(3,qq)**3
-			V(qq,14,pp) = prime_coord(1,qq)**2*prime_coord(2,qq)
-			V(qq,15,pp) = prime_coord(2,qq)**2*prime_coord(3,qq)
-			V(qq,16,pp) = prime_coord(3,qq)**2*prime_coord(1,qq)
-			V(qq,17,pp) = prime_coord(1,qq)*prime_coord(2,qq)**2
-			V(qq,18,pp) = prime_coord(2,qq)*prime_coord(3,qq)**2
-			V(qq,19,pp) = prime_coord(3,qq)*prime_coord(1,qq)**2
-			V(qq,20,pp) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
+			V(qq,11) = prime_coord(1,qq)**3
+			V(qq,12) = prime_coord(2,qq)**3
+			V(qq,13) = prime_coord(3,qq)**3
+			V(qq,14) = prime_coord(1,qq)**2*prime_coord(2,qq)
+			V(qq,15) = prime_coord(2,qq)**2*prime_coord(3,qq)
+			V(qq,16) = prime_coord(3,qq)**2*prime_coord(1,qq)
+			V(qq,17) = prime_coord(1,qq)*prime_coord(2,qq)**2
+			V(qq,18) = prime_coord(2,qq)*prime_coord(3,qq)**2
+			V(qq,19) = prime_coord(3,qq)*prime_coord(1,qq)**2
+			V(qq,20) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(3,qq)
 		enddo
 	elseif(N_vandermonde.eq.4.and.n_dim.eq.2) then
 		L_N = 15
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(1,qq)
-			V(qq,7,pp) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,8,pp) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,9,pp) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,10,pp) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,11,pp) = prime_coord(1,qq)**4
-			V(qq,12,pp) = prime_coord(2,qq)**4
-			V(qq,13,pp) = prime_coord(1,qq)**3*prime_coord(2,qq)
-			V(qq,14,pp) = prime_coord(1,qq)**2*prime_coord(2,qq)**2
-			V(qq,15,pp) = prime_coord(1,qq)*prime_coord(2,qq)**3
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
+			V(qq,7) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,8) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,9) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,11) = prime_coord(1,qq)**4
+			V(qq,12) = prime_coord(2,qq)**4
+			V(qq,13) = prime_coord(1,qq)**3*prime_coord(2,qq)
+			V(qq,14) = prime_coord(1,qq)**2*prime_coord(2,qq)**2
+			V(qq,15) = prime_coord(1,qq)*prime_coord(2,qq)**3
 		enddo
 	elseif(N_vandermonde.eq.4.and.n_dim.eq.3) then
 		L_N = 35
 		do qq = 1,total_comp_pts
-			V(qq,1,pp) = 1
-			V(qq,2,pp) = prime_coord(1,qq)
-			V(qq,3,pp) = prime_coord(2,qq)
-			V(qq,4,pp) = prime_coord(3,qq)
-			V(qq,5,pp) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6,pp) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7,pp) = prime_coord(3,qq)*prime_coord(3,qq)
-			V(qq,8,pp) = prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,9,pp) = prime_coord(2,qq)*prime_coord(3,qq)
-			V(qq,10,ii) = prime_coord(3,qq)*prime_coord(1,qq)
-			V(qq,11,pp) = prime_coord(1,qq)**3
-			V(qq,12,pp) = prime_coord(2,qq)**3
-			V(qq,13,pp) = prime_coord(3,qq)**3
-			V(qq,14,pp) = prime_coord(1,qq)**2*prime_coord(2,qq)
-			V(qq,15,pp) = prime_coord(2,qq)**2*prime_coord(3,qq)
-			V(qq,16,pp) = prime_coord(3,qq)**2*prime_coord(1,qq)
-			V(qq,17,pp) = prime_coord(1,qq)*prime_coord(2,qq)**2
-			V(qq,18,pp) = prime_coord(2,qq)*prime_coord(3,qq)**2
-			V(qq,19,pp) = prime_coord(3,qq)*prime_coord(1,qq)**2
-			V(qq,20,pp) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(3,qq)
-			V(qq,21,pp) = prime_coord(1,qq)**4
-			V(qq,22,pp) = prime_coord(2,qq)**4
-			V(qq,23,pp) = prime_coord(3,qq)**4
-			V(qq,24,pp) = prime_coord(1,qq)**3*prime_coord(2,qq)
-			V(qq,25,pp) = prime_coord(2,qq)**3*prime_coord(3,qq)
-			V(qq,26,pp) = prime_coord(3,qq)**3*prime_coord(1,qq)
-			V(qq,27,pp) = prime_coord(1,qq)*prime_coord(2,qq)**3
-			V(qq,28,pp) = prime_coord(2,qq)*prime_coord(3,qq)**3
-			V(qq,29,pp) = prime_coord(3,qq)*prime_coord(1,qq)**3
-			V(qq,30,pp) = prime_coord(1,qq)**2*prime_coord(2,qq)**2
-			V(qq,31,pp) = prime_coord(2,qq)**2*prime_coord(3,qq)**2
-			V(qq,32,pp) = prime_coord(3,qq)**2*prime_coord(1,qq)**2
-			V(qq,33,pp) = prime_coord(1,qq)**2*prime_coord(2,qq)*prime_coord(3,qq)
-			V(qq,34,pp) = prime_coord(2,qq)**2*prime_coord(3,qq)*prime_coord(1,qq)
-			V(qq,35,pp) = prime_coord(3,qq)**2*prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,1) = 1
+			V(qq,2) = prime_coord(1,qq)
+			V(qq,3) = prime_coord(2,qq)
+			V(qq,4) = prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
+			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
+			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
+			V(qq,11) = prime_coord(1,qq)**3
+			V(qq,12) = prime_coord(2,qq)**3
+			V(qq,13) = prime_coord(3,qq)**3
+			V(qq,14) = prime_coord(1,qq)**2*prime_coord(2,qq)
+			V(qq,15) = prime_coord(2,qq)**2*prime_coord(3,qq)
+			V(qq,16) = prime_coord(3,qq)**2*prime_coord(1,qq)
+			V(qq,17) = prime_coord(1,qq)*prime_coord(2,qq)**2
+			V(qq,18) = prime_coord(2,qq)*prime_coord(3,qq)**2
+			V(qq,19) = prime_coord(3,qq)*prime_coord(1,qq)**2
+			V(qq,20) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,21) = prime_coord(1,qq)**4
+			V(qq,22) = prime_coord(2,qq)**4
+			V(qq,23) = prime_coord(3,qq)**4
+			V(qq,24) = prime_coord(1,qq)**3*prime_coord(2,qq)
+			V(qq,25) = prime_coord(2,qq)**3*prime_coord(3,qq)
+			V(qq,26) = prime_coord(3,qq)**3*prime_coord(1,qq)
+			V(qq,27) = prime_coord(1,qq)*prime_coord(2,qq)**3
+			V(qq,28) = prime_coord(2,qq)*prime_coord(3,qq)**3
+			V(qq,29) = prime_coord(3,qq)*prime_coord(1,qq)**3
+			V(qq,30) = prime_coord(1,qq)**2*prime_coord(2,qq)**2
+			V(qq,31) = prime_coord(2,qq)**2*prime_coord(3,qq)**2
+			V(qq,32) = prime_coord(3,qq)**2*prime_coord(1,qq)**2
+			V(qq,33) = prime_coord(1,qq)**2*prime_coord(2,qq)*prime_coord(3,qq)
+			V(qq,34) = prime_coord(2,qq)**2*prime_coord(3,qq)*prime_coord(1,qq)
+			V(qq,35) = prime_coord(3,qq)**2*prime_coord(1,qq)*prime_coord(2,qq)
 		enddo
 	endif
 	
@@ -794,4 +791,274 @@ SUBROUTINE ibm_coeff_vandermonde(pp,prime_coord,total_comp_pts)
 END
 
 
+SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 
+	use declare_variables
+	use kdtree2_module
+	implicit none
+	
+	integer nvars,pp,gg,i_l,j_l,k_l,nbl_l,nbrhd_pts,nvarsc
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI_W,PHI 
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvarsc) :: PHIC 
+	real xbi,ybi,zbi,x_normal,y_normal,z_normal,Etotal,norm,xgp,ygp,zgp
+
+	
+	nbrhd_pts = 59 ! same as that in matrix calculations
+	
+	do gg = 1,no_ghost_pts
+		
+		call get_loc_index(ghost_pt_idx(gg))
+		i_l = i_loc
+		j_l = j_loc
+		k_l = k_loc
+		nbl_l = nbl_loc
+		xbi = BII(1,gg)
+		ybi = BII(2,gg)
+		zbi = BII(3,gg)
+		xgp = ghost_pt(1,gg)
+		ygp = ghost_pt(2,gg)
+		zgp = ghost_pt(3,gg)
+		norm = ((xbi-xgp)**2+(ybi-ygp)**2+(zbi-zgp)**2)**0.5
+		
+		call nn_fluid(nbrhd_pts,xbi,ybi,zbi) ! no of vicinity pts available for each BII
+
+		x_normal = (xbi-xgp)/norm
+		y_normal = (ybi-ygp)/norm
+		z_normal = (zbi-zgp)/norm
+
+		PHI(i_l,j_l,k_l,nbl_l,:) = 0
+
+		do pp = 2,no_vicinity_pts ! == dim_A(2,gg)-1
+			
+			call get_loc_index(vicinity_pt_idx(pp))
+			PHI(i_l,j_l,k_l,nbl_l,2) = PHI(i_l,j_l,k_l,nbl_l,2) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,2)
+			PHI(i_l,j_l,k_l,nbl_l,3) = PHI(i_l,j_l,k_l,nbl_l,3) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,3)
+			PHI(i_l,j_l,k_l,nbl_l,4) = PHI(i_l,j_l,k_l,nbl_l,4) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,4)
+			PHI(i_l,j_l,k_l,nbl_l,5) = PHI(i_l,j_l,k_l,nbl_l,5) + (x_normal*A_matrix(2,pp,gg)+y_normal*A_matrix(3,pp,gg) &
+				+z_normal*A_matrix(4,pp,gg))*PHI(i_loc,j_loc,k_loc,nbl_loc,5)
+			PHI(i_l,j_l,k_l,nbl_l,6) = PHI(i_l,j_l,k_l,nbl_l,6) + (x_normal*A_matrix(2,pp,gg)+y_normal*A_matrix(3,pp,gg) &
+				+z_normal*A_matrix(4,pp,gg))*PHI(i_loc,j_loc,k_loc,nbl_loc,6)
+
+		enddo
+
+		PHI(i_l,j_l,k_l,nbl_l,2) = (PHI_W(i_l,j_l,k_l,nbl_l,2) - PHI(i_l,j_l,k_l,nbl_l,2))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,3) = (PHI_W(i_l,j_l,k_l,nbl_l,3) - PHI(i_l,j_l,k_l,nbl_l,3))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,4) = (PHI_W(i_l,j_l,k_l,nbl_l,4) - PHI(i_l,j_l,k_l,nbl_l,4))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,5) = (PHI_W(i_l,j_l,k_l,nbl_l,5) - PHI(i_l,j_l,k_l,nbl_l,5))/ &
+			(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))
+		PHI(i_l,j_l,k_l,nbl_l,6) = (PHI_W(i_l,j_l,k_l,nbl_l,6) - PHI(i_l,j_l,k_l,nbl_l,6))/ &
+			(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))	
+		PHI(i_l,j_l,k_l,nbl_l,1) = gamma*Mach**2.d0*PHI(i_l,j_l,k_l,nbl_l,5)/PHI(i_l,j_l,k_l,nbl_l,6)
+
+		PHIC(i_l,j_l,k_l,nbl_l,1) = PHI(i_l,j_l,k_l,nbl_l,1)
+		PHIC(i_l,j_l,k_l,nbl_l,2) = PHI(i_l,j_l,k_l,nbl_l,1)*PHI(i_l,j_l,k_l,nbl_l,2)
+		PHIC(i_l,j_l,k_l,nbl_l,3) = PHI(i_l,j_l,k_l,nbl_l,1)*PHI(i_l,j_l,k_l,nbl_l,3)
+		PHIC(i_l,j_l,k_l,nbl_l,4) = PHI(i_l,j_l,k_l,nbl_l,1)*PHI(i_l,j_l,k_l,nbl_l,4)
+
+		Etotal = PHI(i_l,j_l,k_l,nbl_l,5)/(PHI(i_l,j_l,k_l,nbl_l,1)*(gamma-1.d0)) + &
+			0.5d0*(PHI(i_l,j_l,k_l,nbl_l,2)**2+PHI(i_l,j_l,k_l,nbl_l,3)**2+PHI(i_l,j_l,k_l,nbl_l,4)**2)
+
+		PHIC(i_l,j_l,k_l,nbl_l,5) = PHI(i_l,j_l,k_l,nbl_l,1)*(Etotal)
+
+		deallocate(vicinity_pts)
+		deallocate(vicinity_pt_idx)
+
+	enddo
+	
+	
+END
+
+
+SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
+
+	use declare_variables
+	implicit none
+	
+	integer prim,nvars,coeff
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
+	real,dimension(NImax) :: RHS
+	
+	AC_COMP_IBM(1:ptsmax) = 1.d0
+	AP_COMP_IBM(1:ptsmax) = alpha
+	AM_COMP_IBM(1:ptsmax) = alpha
+	
+	do prim = 1,nvars
+	do nbl = 1,nblocks
+	do k = 1,NK(nbl)
+	do j = 1,NJ(nbl)
+		
+		
+		do i = 3,NI(nbl)-2
+			RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
+					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
+			if(type_ibm(i,j,k,nbl).eq.0) then
+				AM_COMP_IBM(i) = 0
+				AP_COMP_IBM(i) = 0
+			endif
+		Enddo
+	
+		RHS(1) = (bdisc/4.d0)*(PHI(3,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim))
+		RHS(2) = (bdisc/4.d0)*(PHI(4,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(3,j,k,nbl,prim)-PHI(1,j,k,nbl,prim))
+		RHS(NI(nbl)-2) = (bdisc/4.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-4,j,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(NI(nbl)-1,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim))
+		RHS(NI(nbl)-1) = (bdisc/4.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim))
+	
+		if(type_ibm(1,j,k,nbl).eq.0) then
+			AM_COMP_IBM(1) = 0
+			AP_COMP_IBM(1) = 0
+		elseif(type_ibm(2,j,k,nbl).eq.0) then
+			AM_COMP_IBM(2) = 0
+			AP_COMP_IBM(2) = 0
+		elseif(type_ibm(NI(nbl)-2,j,k,nbl).eq.0) then
+			AM_COMP_IBM(NI(nbl)2) = 0
+			AP_COMP_IBM(NI(nbl)-2) = 0
+		elseif(type_ibm(NI(nbl)-1,j,k,nbl).eq.0) then
+			AM_COMP_IBM(NI(nbl)-1) = 0
+			AP_COMP_IBM(NI(nbl)-1) = 0
+		endif
+		
+		call TDMAP(1,NI(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NI(nbl)-1)
+		
+		PHID(1:NI(nbl)-1,j,k,nbl,prim) = RHS(1:NI(nbl)-1)
+		PHID(NI(nbl),j,k,nbl,prim) = PHID(1,j,k,nbl,prim)
+	  
+	enddo
+	enddo
+	enddo
+	enddo
+	
+END
+
+
+
+
+
+SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
+	use declare_variables
+	implicit none
+	
+	integer prim,nvars
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
+	real,dimension(NJmax) :: RHS
+	
+	AC_COMP_IBM(1:ptsmax) = 1.d0
+	AP_COMP_IBM(1:ptsmax) = alpha
+	AM_COMP_IBM(1:ptsmax) = alpha
+	
+	do prim = 1,nvars
+	do nbl = 1,nblocks
+	do k = 1,NK(nbl)
+	do i = 1,NI(nbl)
+	 
+	 
+		Do j = 3,NJ(nbl)-2
+			RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
+							+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))
+			if(type_ibm(i,j,k,nbl).eq.0) then
+				AM_COMP_IBM(j) = 0
+				AP_COMP_IBM(j) = 0
+			endif
+							
+		Enddo
+		
+		RHS(1) = (bdisc/4.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim))
+		RHS(2) = (bdisc/4.d0)*(PHI(i,4,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,1,k,nbl,prim))
+		RHS(NJ(nbl)-2) = (bdisc/4.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-4,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,NJ(nbl)-1,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim))
+		RHS(NJ(nbl)-1) = (bdisc/4.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim))
+						
+		if(type_ibm(i,1,k,nbl).eq.0) then
+			AM_COMP_IBM(1) = 0
+			AP_COMP_IBM(1) = 0
+		elseif(type_ibm(i,2,k,nbl).eq.0) then
+			AM_COMP_IBM(2) = 0
+			AP_COMP_IBM(2) = 0
+		elseif(type_ibm(i,NJ(nbl)-2,k,nbl).eq.0) then
+			AM_COMP_IBM(NJ(nbl)2) = 0
+			AP_COMP_IBM(NJ(nbl)-2) = 0
+		elseif(type_ibm(i,NJ(nbl)-1,k,nbl).eq.0) then
+			AM_COMP_IBM(NJ(nbl)-1) = 0
+			AP_COMP_IBM(NJ(nbl)-1) = 0
+		endif
+
+		call TDMAP(1,NJ(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NJ(nbl)-1)
+		
+		PHID(i,1:NJ(nbl)-1,k,nbl,prim) = RHS(1:NJ(nbl)-1)
+		PHID(i,NJ(nbl),k,nbl,prim) = PHID(i,1,k,nbl,prim)
+	  
+	    enddo
+		enddo
+		enddo
+		enddo
+	  
+END
+
+
+
+SUBROUTINE DISCRETIZATION_K_COMP_IBM(PHI,PHID,nvars)
+	use declare_variables
+	implicit none
+	
+	integer prim,nvars
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
+	real,dimension(NKmax) :: RHS
+ 
+	AC_COMP_IBM(1:ptsmax) = 1.d0
+	AP_COMP_IBM(1:ptsmax) = alpha
+	AM_COMP_IBM(1:ptsmax) = alpha
+	
+	do prim = 1,nvars
+	do nbl = 1,nblocks
+	do j = 1,NJ(nbl)
+	do i = 1,Ni(nbl)
+		
+		do k = 3,NK(nbl)-2
+			RHS(k) = (bdisc/4.d0)*(PHI(i,j,k+2,nbl,prim)-PHI(i,j,k-2,nbl,prim)) &
+							+ (adisc/2.d0)*(PHI(i,j,k+1,nbl,prim)-PHI(i,j,k-1,nbl,prim))
+			if(type_ibm(i,j,k,nbl).eq.0) then
+				AM_COMP_IBM(k) = 0
+				AP_COMP_IBM(k) = 0
+			endif
+			
+		enddo
+		
+		RHS(1) = (bdisc/4.d0)*(PHI(i,j,3,nbl,prim)-PHI(i,j,NK(nbl)-2,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,j,2,nbl,prim)-PHI(i,j,NK(nbl)-1,nbl,prim))
+		RHS(2) = (bdisc/4.d0)*(PHI(i,j,4,nbl,prim)-PHI(i,j,NK(nbl)-1,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,j,3,nbl,prim)-PHI(i,j,1,nbl,prim))
+		RHS(NK(nbl)-2) = (bdisc/4.d0)*(PHI(i,j,1,nbl,prim)-PHI(i,j,NK(nbl)-4,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,j,NK(nbl)-1,nbl,prim)-PHI(i,j,NK(nbl)-3,nbl,prim))
+		RHS(NK(nbl)-1) = (bdisc/4.d0)*(PHI(i,j,2,nbl,prim)-PHI(i,j,NK(nbl)-3,nbl,prim)) &
+						+ (adisc/2.d0)*(PHI(i,j,1,nbl,prim)-PHI(i,j,NK(nbl)-2,nbl,prim))
+			
+		if(type_ibm(i,j,1,nbl).eq.0) then
+			AM_COMP_IBM(1) = 0
+			AP_COMP_IBM(1) = 0
+		elseif(type_ibm(i,j,2,nbl).eq.0) then
+			AM_COMP_IBM(2) = 0
+			AP_COMP_IBM(2) = 0
+		elseif(type_ibm(i,j,NK(nbl)-2,nbl).eq.0) then
+			AM_COMP_IBM(NK(nbl)2) = 0
+			AP_COMP_IBM(NK(nbl)-2) = 0
+		elseif(type_ibm(i,j,NK(nbl)-1,nbl).eq.0) then
+			AM_COMP_IBM(NK(nbl)-1) = 0
+			AP_COMP_IBM(NK(nbl)-1) = 0
+		endif
+			
+		call TDMAP(1,NK(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NK(nbl)-1)
+		
+		PHID(i,j,1:NK(nbl)-1,nbl,prim) = RHS(1:NK(nbl)-1)
+		PHID(i,j,NK(nbl),nbl,prim) = PHID(i,j,1,nbl,prim)
+	 
+	enddo
+	enddo
+	enddo
+	enddo
+ 
+END
