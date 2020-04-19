@@ -74,15 +74,15 @@
 	  integer,allocatable :: type_ibm(:,:,:,:)
 	  integer,allocatable :: maxshare,i_loc,j_loc,k_loc,nbl_loc,global_index
 	  real,allocatable :: ghost_pt(:,:)
-	  integer,allocatable :: ghost_pt_idx(:)
+	  integer,allocatable :: ghost_pt_idx(:),vicinity_pt_idx(:)
 	  integer,allocatable :: no_ghost_pts,no_body_pts,no_fluid_pts,no_vicinity_pts
 	  real,allocatable :: BII(:,:)
 	  real,allocatable :: vicinity_pts(:,:),R
-	  real(dp),allocatable :: W(:,:,:),V(:,:,:),p_i(:,:,:),A_matrix(:,:,:)
+	  real(dp),allocatable :: W(:,:),V(:,:),p_i(:,:),A_matrix(:,:,:)
 	  integer,allocatable :: flag_nn_alloc,N_vandermonde,L_N,flag_vandermonde_alloc
-	  integer,allocatable :: flag_pi_alloc,flag_A_alloc
-	  
-	  
+	  integer,allocatable :: flag_pi_alloc,flag_A_alloc,total_comp_pts
+	  integer,allocatable :: dim_A(:,:)
+	  real,allocatable :: Qp_W(:,:,:,:,:)
 	  
 	  
 	  
