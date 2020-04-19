@@ -83,6 +83,7 @@
 	  integer,allocatable :: flag_pi_alloc,flag_A_alloc,total_comp_pts
 	  integer,allocatable :: dim_A(:,:)
 	  real,allocatable :: Qp_W(:,:,:,:,:)
+	  real,allocatable :: AC_COMP_IBM(:),AP_COMP_IBM(:),AM_COMP_IBM(:)
 	  
 	  
 	  
