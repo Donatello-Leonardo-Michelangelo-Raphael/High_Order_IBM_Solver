@@ -172,6 +172,16 @@
 		  allocate(global_index)
 		  allocate(no_body_pts)
 		  allocate(no_fluid_pts)
+		  allocate(no_vicinity_pts)
+		  allocate(R)
+		  allocate(N_vandermonde)
+		  allocate(L_N)
+		  allocate(flag_nn_alloc)
+		  allocate(flag_vandermonde_alloc)
+		  allocate(flag_pi_alloc)
+		  allocate(flag_A_alloc)
+		  allocate(total_comp_pts)
+		  allocate(Qp_W(NImax,NJmax,NKmax,nblocks,nprims))
 
       END 
 !********************************************************************************************
@@ -284,8 +294,9 @@
 		  call ghost_points()
 		  
 		  call boundary_intercept(xbg,ybg,zbg)
-	  
-	  
+	  	  
+		  call matrix_calculations()
+
 	  END
 !********************************************************************************************
 
@@ -380,6 +391,13 @@ END
 					Qp(i,j,k,nbl,6) = 1.d0           ! might be a logical error here.......temp=1k makes no sense
 					Qp(i,j,k,nbl,1) = gamma*Mach**2.d0*Qp(i,j,k,nbl,5)/Qp(i,j,k,nbl,6)
 					
+					Qp_W(i,j,k,nbl,1) = 0.d0 ! not sure
+					Qp_W(i,j,k,nbl,2) = 0.d0
+					Qp_W(i,j,k,nbl,3) = 0.d0
+					Qp_W(i,j,k,nbl,4) = 0.d0
+					Qp_W(i,j,k,nbl,5) = 0.d0
+					Qp_W(i,j,k,nbl,6) = 0.d0 ! not sure
+				
 					mu(i,j,k,nbl) = 1.d0
 					
 					Qc(i,j,k,nbl,1) = Qp(i,j,k,nbl,1)
@@ -395,6 +413,8 @@ END
 				  enddo
 				  enddo
 				  enddo
+				  
+				  call phi_gp(Qp_W,Qp,nprims,Qc,nconserv)
 		  
 			  elseif(tgv_covo.eq.2) then
 	  
@@ -419,6 +439,14 @@ END
 					Qp(i,j,k,nbl,6) = 1.d0           ! might be a logical error here.......temp=1k makes no sense
 					Qp(i,j,k,nbl,1) = gamma*Mach**2.d0*Qp(i,j,k,nbl,5)/Qp(i,j,k,nbl,6)
 				
+					Qp_W(i,j,k,nbl,1) = 0.d0 ! not sure
+					Qp_W(i,j,k,nbl,2) = 0.d0
+					Qp_W(i,j,k,nbl,3) = 0.d0
+					Qp_W(i,j,k,nbl,4) = 0.d0
+					Qp_W(i,j,k,nbl,5) = 0.d0
+					Qp_W(i,j,k,nbl,6) = 0.d0 ! not sure
+				
+				
 					mu(i,j,k,nbl) = 1.d0
 				
 					Qc(i,j,k,nbl,1) = Qp(i,j,k,nbl,1)
@@ -434,6 +462,8 @@ END
 				  enddo
 				  enddo
 				  enddo
+				  
+				  call phi_gp(Qp_W,Qp,nprims,Qc,nconserv)
 		  
 			  endif
 			  
