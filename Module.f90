@@ -1,5 +1,8 @@
       MODULE declare_variables
+	  
+	  use kdtree2_module
 	  implicit none
+	  
 	  
       integer, parameter :: fresidual = 1, finput = 2, fgrid = 3, fflow = 4, fenstrophy_tke = 5, &
 							fswirl_error = 6
@@ -84,8 +87,10 @@
 	  integer,allocatable :: dim_A(:,:)
 	  real,allocatable :: Qp_W(:,:,:,:,:)
 	  real,allocatable :: AC_COMP_IBM(:),AP_COMP_IBM(:),AM_COMP_IBM(:)
-	  
-	  
+	  real,allocatable :: bfp(:),boundary_fluid_pts(:,:)
+	  integer,allocatable :: bfp_idx,boundary_fluid_pts_idx(:),no_bfp_pts
+      real,allocatable :: grid_pts(:,:),b_incpt(:)
+	  type(kdtree2),pointer :: tree_grid_pts
 	  
 	  
 	  
