@@ -27,7 +27,7 @@
       print*, 'Allocated Integers, Real numbers and Arrays Done'
 !****** GENERATE GRID ******************************************************
       call GENERATE_GRID()
-      print*, 'Grid Generation Done'	  
+      print*, 'Grid Generation Done'
 !****** IBM PREPROCESSING ******************************************************
 	  call ibm_preprocessing()
 	  print*, 'IBM Preprocessing Done'
@@ -104,90 +104,105 @@
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
 !@@@@@@@@@@@@@@@@@@@@@@@ MAIN TIME LOOP @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      do iter = 1,nsteps   !EXPLICIT TIME STEPPING
+      print*,''
+	  
+	  print*,'Qp Initial',maxval(Qp(:,:,:,:,1)),maxval(Qp(:,:,:,:,2)),maxval(Qc(:,:,:,:,3)) &
+			,maxval(Qp(:,:,:,:,4)),maxval(Qp(:,:,:,:,5)),maxval(Qp(:,:,:,:,6))		
+	  print*,'Qc Initial',maxval(Qc(:,:,:,:,1)),maxval(Qc(:,:,:,:,2)),maxval(Qc(:,:,:,:,3)) &
+			,maxval(Qc(:,:,:,:,4)),maxval(Qc(:,:,:,:,5)) ,'NA'
+
+	 
+	  do iter = 1,nsteps   !EXPLICIT TIME STEPPING
 		Qcini = Qc
 		Qcnew = Qc
 	  
-		if(tgv_covo.eq.2) then
-			if(iter.eq.1) then
-				do nbl = 1,nblocks
-				do i = 1,NI(nbl)
-					swirl_vel_init(i,nbl) = Qp(i,NJ(nbl)/2,2,nbl,3)
-				enddo
-				enddo
-			endif
-		endif
-	  
+		!if(tgv_covo.eq.2) then
+		!	if(iter.eq.1) then
+		!		do nbl = 1,nblocks
+		!		do i = 1,NI(nbl)
+		!			swirl_vel_init(i,nbl) = Qp(i,NJ(nbl)/2,2,nbl,3)
+		!		enddo
+		!		enddo
+		!	endif
+		!endif
+		print*,''
 		print*, "Time Step:", iter
 	  
 		do step = 1,rk_steps
 			call UNSTEADY(step,iter)
-			if(step.eq.4) then
-				call FILTERING_I(Qc,nconserv)
-				call FILTERING_J(Qc,nconserv)
-				if(tgv_covo.eq.1) then
-					call FILTERING_K(Qc,nconserv)
-				endif
-			endif
+			!if(step.eq.4) then
+			!	call FILTERING_I(Qc,nconserv)
+			!	call FILTERING_J(Qc,nconserv)
+			!	if(tgv_covo.eq.1) then
+			!		call FILTERING_K(Qc,nconserv)
+			!	endif
+			!endif
 			call SET_PRIMITIVES()
 		enddo
 	  
-		if(tgv_covo.eq.2) then
-			if(iter.eq.nsteps) then
-				do nbl = 1,nblocks
-				do i = 1,NI(nbl)
-					swirl_vel_final(i,nbl) = Qp(i,NJ(nbl)/2,2,nbl,3)
-				enddo
-				enddo
-			endif
-		endif
+		!if(tgv_covo.eq.2) then
+		!	if(iter.eq.nsteps) then
+		!		do nbl = 1,nblocks
+		!		do i = 1,NI(nbl)
+		!			swirl_vel_final(i,nbl) = Qp(i,NJ(nbl)/2,2,nbl,3)
+		!		enddo
+		!		enddo
+		!	endif
+		!endif
 		
-		if(tgv_covo.eq.1) then
-			call ENSTROPHY_TKE(iter)
-			print*, 'Enstrophy : ', enstrophy(iter), 'TKE : ', tke(iter)
-		endif
+		!if(tgv_covo.eq.1) then
+		!	call ENSTROPHY_TKE(iter)
+		!	print*, 'Enstrophy : ', enstrophy(iter), 'TKE : ', tke(iter)
+		!endif
 		
-	  
 		residual(iter) = maxval(abs(Qc-Qcini))
 		print*, "Max Error:", residual(iter)
 	!  	print*, "Maximum Flux:", maxval(net_flux)
-		print*, "Max Net Flux", maxval(net_flux)
+	!	print*, "Max Net Flux", maxval(net_flux)
+		print*,'Qp      ',maxval(Qp(:,:,:,:,1)),maxval(Qp(:,:,:,:,2)),maxval(Qc(:,:,:,:,3)) &
+			,maxval(Qp(:,:,:,:,4)),maxval(Qp(:,:,:,:,5)),maxval(Qp(:,:,:,:,6))
+		print*,'Qc      ',maxval(Qc(:,:,:,:,1)),maxval(Qc(:,:,:,:,2)),maxval(Qc(:,:,:,:,3)) &
+			,maxval(Qc(:,:,:,:,4)),maxval(Qc(:,:,:,:,5)),'NA'
+		print*,'Net Flux',maxval(net_flux(:,:,:,:,1)),maxval(net_flux(:,:,:,:,2)),maxval(net_flux(:,:,:,:,3)) &
+			,maxval(net_flux(:,:,:,:,4)),maxval(net_flux(:,:,:,:,5)),'NA'
 	  
 		time = time + time_step
 	  
 	  enddo	
 	  
-	  if(tgv_covo.eq.2) then
-		do nbl = 1,nblocks
-			swirl_error = maxval(abs(swirl_vel_final(:,nbl)-swirl_vel_init(:,nbl)))
-		enddo
-	  endif
+	  print*, 'Time Integration Done'
+	  
+	 !if(tgv_covo.eq.2) then
+	 !do nbl = 1,nblocks
+	 !	swirl_error = maxval(abs(swirl_vel_final(:,nbl)-swirl_vel_init(:,nbl)))
+	 !enddo
+	 !endif
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
-!@@@@@@@@@@@@@@@@@@@@@@@ END OF MAIN TIME LOOP @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
-!@@@@@@@@@@@@@@@@@@@@@@@ POST PROCESSING STEPS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      
-	!****** Write the output ***************
-101	  print*, 'Writing Output....'
-      call SET_PRIMITIVES()
-      call OUTPUT(0)
-      print*, 'Writing output done'
- 
-	!****** Deallocate Arrays **************
-      call DEALLOCATE_ROUTINE()
-      print*, 'Deallocated Arrays'
-
-	  call cpu_time(stop_time)
-	  print*, "Run Time :", stop_time-start_time, "Seconds"
-	  print*, "Run Time :", (stop_time-start_time)/60, "Minutes"
-
+!!@@@@@@@@@@@@@@@@@@@@@@@ END OF MAIN TIME LOOP @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!
+!
+!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
+!!@@@@@@@@@@@@@@@@@@@@@@@ POST PROCESSING STEPS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!      
+!	!****** Write the output ***************
+!101	  print*, 'Writing Output....'
+!      call SET_PRIMITIVES()
+!      call OUTPUT(0)
+!      print*, 'Writing output done'
+! 
+!	!****** Deallocate Arrays **************
+!      call DEALLOCATE_ROUTINE()
+!      print*, 'Deallocated Arrays'
+!
+!	  call cpu_time(stop_time)
+!	  print*, "Run Time :", stop_time-start_time, "Seconds"
+!	  print*, "Run Time :", (stop_time-start_time)/60, "Minutes"
+!
       END PROGRAM
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
-!@@@@@@@@@@@@@@@@@@@@@@@ END OF POST PROCESSING STEPS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!
+!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	  
+!!@@@@@@@@@@@@@@@@@@@@@@@ END OF POST PROCESSING STEPS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
