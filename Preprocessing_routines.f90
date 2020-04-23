@@ -182,6 +182,14 @@
 		  allocate(flag_A_alloc)
 		  allocate(total_comp_pts)
 		  allocate(Qp_W(NImax,NJmax,NKmax,nblocks,nprims))
+		  allocate(AC_COMP_IBM(ptsmax))
+		  allocate(AP_COMP_IBM(ptsmax))
+		  allocate(AM_COMP_IBM(ptsmax))
+		  allocate(bfp(3))
+		  allocate(bfp_idx)
+		  allocate(no_bfp_pts)
+		  allocate(grid_pts(3,NImax*NJmax*NKmax*nblocks))
+		  allocate(b_incpt(3))
 
       END 
 !********************************************************************************************
@@ -262,9 +270,10 @@
 	  SUBROUTINE ibm_preprocessing()
 	  
 		  use declare_variables
+		  use kdtree2_module
 		  implicit none
 	  
-		  integer elem,node
+		  integer elem,node,gridpts_iter
 		  
 		  num_share_elems = 0
 		  
@@ -287,7 +296,25 @@
 			num_share_elems(node) = num_share_elems(node) + 1
 			ind_share_elems(node,num_share_elems(node)) = elem
 		  enddo
-		  enddo		  
+		  enddo		
+		 
+		  gridpts_iter = 0
+		  do nbl = 1,nblocks
+		  do k = 1,NK(nbl)
+		  do j = 1,NJ(nbl)
+		  do i = 1,NI(nbl)
+		  
+		 	 gridpts_iter = gridpts_iter + 1
+		 	 grid_pts(1,gridpts_iter) = Xgrid(i,j,k,nbl)
+		 	 grid_pts(2,gridpts_iter) = Ygrid(i,j,k,nbl)
+		 	 grid_pts(3,gridpts_iter) = Zgrid(i,j,k,nbl)
+		  
+		  enddo
+		  enddo
+		  enddo
+		  enddo
+		  
+		  tree_grid_pts => kdtree2_create(grid_pts,rearrange=.true.,sort=.true.)
 	  
 		  call ibm_type(xbg,ybg,zbg)
 		  
@@ -296,6 +323,8 @@
 		  call boundary_intercept(xbg,ybg,zbg)
 	  	  
 		  call matrix_calculations()
+		  
+		  call boundary_fluid_points()
 
 	  END
 !********************************************************************************************
