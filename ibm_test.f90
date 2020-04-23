@@ -107,6 +107,10 @@ SUBROUTINE ibm_type(x,y,z)
 	print*,'Number of Fluid Points : ', no_fluid_pts
 	print*,'Number of Body Points : ', no_body_pts
 	
+	deallocate(global_ibm)
+	deallocate(qu_ibm)
+	deallocate(results_ibm)
+	
 
 END
 
@@ -392,6 +396,10 @@ SUBROUTINE boundary_intercept(x,y,z)
   	enddo
 	
 	print*,'Boundary Intercept Calculated'
+	
+	deallocate(res)
+	deallocate(global_ibm)
+	deallocate(qu_ibm)
 
 END
 
@@ -406,42 +414,21 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 	
 	integer nbrhd_pts
 	real x,y,z
-	integer gridpts_iter,near_node,vicinity_pts_iter,indx
+	integer near_node,vicinity_pts_iter,indx,dist_dum
 	real dist
-	real,allocatable :: grid_pts(:,:),b_incpt(:)
-	type(kdtree2),pointer :: tree_grid_pts
 	type(kdtree2_result),allocatable :: results(:)
 	
-	allocate(grid_pts(3,NImax*NJmax*NKmax*nblocks))
-	allocate(b_incpt(3))
 	allocate(results(nbrhd_pts))
-	
-	gridpts_iter = 0
+
 	R = 0
-	
-	do nbl = 1,nblocks
-	do k = 1,NK(nbl)
-	do j = 1,NJ(nbl)
-	do i = 1,NI(nbl)
-	
-		gridpts_iter = gridpts_iter + 1
-		grid_pts(1,gridpts_iter) = Xgrid(i,j,k,nbl)
-		grid_pts(2,gridpts_iter) = Ygrid(i,j,k,nbl)
-		grid_pts(3,gridpts_iter) = Zgrid(i,j,k,nbl)
-	
-	enddo
-	enddo
-	enddo
-	enddo
-	
-	tree_grid_pts => kdtree2_create(grid_pts,rearrange=.true.,sort=.true.)
+	dist_dum = 10e5	
 	
 	b_incpt(1) = x
 	b_incpt(2) = y
 	b_incpt(3) = z
-	
+
 	call kdtree2_n_nearest(tree_grid_pts,b_incpt,nbrhd_pts,results)
-	
+
 	vicinity_pts_iter = 0
 	
 	do indx = 1,nbrhd_pts
@@ -469,6 +456,13 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 			vicinity_pts(1,vicinity_pts_iter) = Xgrid(i_loc,j_loc,k_loc,nbl_loc)
 			vicinity_pts(2,vicinity_pts_iter) = Ygrid(i_loc,j_loc,k_loc,nbl_loc)
 			vicinity_pts(3,vicinity_pts_iter) = Zgrid(i_loc,j_loc,k_loc,nbl_loc)
+			if(dist<dist_dum) then
+				bfp_idx = near_node
+				bfp(1) = Xgrid(i_loc,j_loc,k_loc,nbl_loc)
+				bfp(2) = Ygrid(i_loc,j_loc,k_loc,nbl_loc)
+				bfp(3) = Zgrid(i_loc,j_loc,k_loc,nbl_loc)
+				dist_dum = dist
+			endif
 			if(R.le.dist) then
 				R = dist
 			endif
@@ -476,7 +470,11 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 	enddo
 
 	flag_nn_alloc = 1
+	
 
+	deallocate(results)
+	!print*,results(1)%idx
+	
 END
 
 
@@ -869,14 +867,85 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 END
 
 
+SUBROUTINE boundary_fluid_points()
+
+	use declare_variables
+	implicit none
+
+	integer node,bfp_iter,bfp_temp
+	
+	bfp_iter = 0
+
+	do node=1,nodes
+	
+		call nn_fluid(5,xbg(node),ybg(node),zbg(node)) 
+		
+		!print*,no_vicinity_pts ! at no point should no_vicinity_pts go to 0
+		!print*,bfp_idx
+		if(node.ne.1) then
+			if(bfp_temp.ne.bfp_idx) then
+				bfp_iter = bfp_iter + 1
+				bfp_temp = bfp_idx
+			endif
+		else
+			bfp_iter = bfp_iter + 1
+			bfp_temp = bfp_idx
+		endif	
+		
+		deallocate(vicinity_pts)
+		deallocate(vicinity_pt_idx)
+		
+	enddo
+	
+	no_bfp_pts = bfp_iter
+	bfp_iter = 0
+	
+	allocate(boundary_fluid_pts(3,no_bfp_pts))
+	allocate(boundary_fluid_pts_idx(no_bfp_pts))
+	
+	do node=1,nodes
+	
+		call nn_fluid(5,xbg(node),ybg(node),zbg(node)) 
+		
+		!print*,no_vicinity_pts ! at no point should no_vicinity_pts go to 0
+		!print*,bfp_idx
+		if(node.ne.1) then
+			if(bfp_temp.ne.bfp_idx) then
+				bfp_iter = bfp_iter + 1
+				boundary_fluid_pts_idx(bfp_iter) = bfp_idx
+				boundary_fluid_pts(1,bfp_iter) = bfp(1)
+				boundary_fluid_pts(2,bfp_iter) = bfp(2)
+				boundary_fluid_pts(3,bfp_iter) = bfp(3)
+				bfp_temp = bfp_idx
+			endif
+		else
+			boundary_fluid_pts_idx(bfp_iter) = bfp_idx
+			boundary_fluid_pts(1,bfp_iter) = bfp(1)
+			boundary_fluid_pts(2,bfp_iter) = bfp(2)
+			boundary_fluid_pts(3,bfp_iter) = bfp(3)
+			bfp_temp = bfp_idx
+			bfp_iter = bfp_iter + 1
+		endif	
+		
+		deallocate(vicinity_pts)
+		deallocate(vicinity_pt_idx)
+		
+	enddo
+	
+
+
+END
+
+
 SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 
 	use declare_variables
 	implicit none
 	
-	integer prim,nvars,coeff
+	integer prim,nvars,node
 	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
 	real,dimension(NImax) :: RHS
+	
 	
 	AC_COMP_IBM(1:ptsmax) = 1.d0
 	AP_COMP_IBM(1:ptsmax) = alpha
@@ -889,20 +958,71 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 		
 		
 		do i = 3,NI(nbl)-2
-			RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
-					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
-			if(type_ibm(i,j,k,nbl).eq.0) then
+			if(type_ibm(i,j,k,nbl).eq.0) then ! body points
 				AM_COMP_IBM(i) = 0
 				AP_COMP_IBM(i) = 0
+				dscheme = 4
 			endif
+			if(type_ibm(i,j,k,nbl).eq.-1) then
+				dscheme = 3
+			elseif(type_ibm(i,j,k,nbl).eq.1) then
+				do node = 1,no_bfp_pts
+					call get_loc_index(boundary_fluid_pts_idx(node))
+					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
+						dscheme = 3
+						exit 
+					else
+						dscheme = 4
+						exit
+					endif
+				enddo 
+			endif
+			call DISCRETIZATION_FILTER_RK_VALS()
+			RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
+					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
 		Enddo
 	
+		if(type_ibm(1,j,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(1,j,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(1) = (bdisc/4.d0)*(PHI(3,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim))
+	
+		if(type_ibm(2,j,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(2,j,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(2) = (bdisc/4.d0)*(PHI(4,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(3,j,k,nbl,prim)-PHI(1,j,k,nbl,prim))
+		
+		if(type_ibm(NI(nbl)-2,j,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(NI(nbl)-2,j,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(NI(nbl)-2) = (bdisc/4.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-4,j,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(NI(nbl)-1,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim))
+		
+		if(type_ibm(NI(nbl)-1,j,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(NI(nbl)-1,j,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(NI(nbl)-1) = (bdisc/4.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim))
 	
@@ -913,14 +1033,14 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 			AM_COMP_IBM(2) = 0
 			AP_COMP_IBM(2) = 0
 		elseif(type_ibm(NI(nbl)-2,j,k,nbl).eq.0) then
-			AM_COMP_IBM(NI(nbl)2) = 0
+			AM_COMP_IBM(NI(nbl)-2) = 0
 			AP_COMP_IBM(NI(nbl)-2) = 0
 		elseif(type_ibm(NI(nbl)-1,j,k,nbl).eq.0) then
 			AM_COMP_IBM(NI(nbl)-1) = 0
 			AP_COMP_IBM(NI(nbl)-1) = 0
 		endif
 		
-		call TDMAP(1,NI(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NI(nbl)-1)
+		call TDMAP(1,NI(nbl)-1,AP_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)-1),AM_COMP_IBM(1:NI(nbl)-1),RHS,NI(nbl)-1)
 		
 		PHID(1:NI(nbl)-1,j,k,nbl,prim) = RHS(1:NI(nbl)-1)
 		PHID(NI(nbl),j,k,nbl,prim) = PHID(1,j,k,nbl,prim)
@@ -930,23 +1050,23 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 	enddo
 	enddo
 	
+
+	
 END
-
-
-
 
 
 SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 	use declare_variables
 	implicit none
 	
-	integer prim,nvars
+	integer prim,nvars,node
 	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
 	real,dimension(NJmax) :: RHS
 	
 	AC_COMP_IBM(1:ptsmax) = 1.d0
 	AP_COMP_IBM(1:ptsmax) = alpha
 	AM_COMP_IBM(1:ptsmax) = alpha
+	
 	
 	do prim = 1,nvars
 	do nbl = 1,nblocks
@@ -955,21 +1075,71 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 	 
 	 
 		Do j = 3,NJ(nbl)-2
-			RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
-							+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))
 			if(type_ibm(i,j,k,nbl).eq.0) then
 				AM_COMP_IBM(j) = 0
 				AP_COMP_IBM(j) = 0
+				dscheme = 4
 			endif
-							
+			if(type_ibm(i,j,k,nbl).eq.-1) then
+				dscheme = 3
+			elseif(type_ibm(i,j,k,nbl).eq.1) then
+				do node = 1,no_bfp_pts
+					call get_loc_index(boundary_fluid_pts_idx(node))
+					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
+						dscheme = 3
+						exit 
+					else
+						dscheme = 4
+						exit
+					endif
+				enddo 
+			endif
+			call DISCRETIZATION_FILTER_RK_VALS()
+			RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
+							+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))	
 		Enddo
 		
+		if(type_ibm(i,1,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(i,1,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(1) = (bdisc/4.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim))
+		
+		if(type_ibm(i,2,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(i,2,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(2) = (bdisc/4.d0)*(PHI(i,4,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,1,k,nbl,prim))
+		
+		if(type_ibm(i,NJ(nbl)-2,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(i,NJ(nbl)-2,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(NJ(nbl)-2) = (bdisc/4.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-4,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(i,NJ(nbl)-1,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim))
+		
+		if(type_ibm(i,NJ(nbl)-1,k,nbl).eq.-1) then
+			dscheme = 3
+		elseif(type_ibm(i,NJ(nbl)-1,k,nbl).eq.1) then
+			dscheme = 4
+		else
+			dscheme = 4
+		endif
+		call DISCRETIZATION_FILTER_RK_VALS()
 		RHS(NJ(nbl)-1) = (bdisc/4.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim)) &
 						+ (adisc/2.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim))
 						
@@ -980,14 +1150,14 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 			AM_COMP_IBM(2) = 0
 			AP_COMP_IBM(2) = 0
 		elseif(type_ibm(i,NJ(nbl)-2,k,nbl).eq.0) then
-			AM_COMP_IBM(NJ(nbl)2) = 0
+			AM_COMP_IBM(NJ(nbl)-2) = 0
 			AP_COMP_IBM(NJ(nbl)-2) = 0
 		elseif(type_ibm(i,NJ(nbl)-1,k,nbl).eq.0) then
 			AM_COMP_IBM(NJ(nbl)-1) = 0
 			AP_COMP_IBM(NJ(nbl)-1) = 0
 		endif
 
-		call TDMAP(1,NJ(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NJ(nbl)-1)
+		call TDMAP(1,NJ(nbl)-1,AP_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AM_COMP_IBM(1:NJ(nbl)),RHS,NJ(nbl)-1)
 		
 		PHID(i,1:NJ(nbl)-1,k,nbl,prim) = RHS(1:NJ(nbl)-1)
 		PHID(i,NJ(nbl),k,nbl,prim) = PHID(i,1,k,nbl,prim)
@@ -996,9 +1166,10 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 		enddo
 		enddo
 		enddo
+		
+
 	  
 END
-
 
 
 SUBROUTINE DISCRETIZATION_K_COMP_IBM(PHI,PHID,nvars)
@@ -1044,14 +1215,14 @@ SUBROUTINE DISCRETIZATION_K_COMP_IBM(PHI,PHID,nvars)
 			AM_COMP_IBM(2) = 0
 			AP_COMP_IBM(2) = 0
 		elseif(type_ibm(i,j,NK(nbl)-2,nbl).eq.0) then
-			AM_COMP_IBM(NK(nbl)2) = 0
+			AM_COMP_IBM(NK(nbl)-2) = 0
 			AP_COMP_IBM(NK(nbl)-2) = 0
 		elseif(type_ibm(i,j,NK(nbl)-1,nbl).eq.0) then
 			AM_COMP_IBM(NK(nbl)-1) = 0
 			AP_COMP_IBM(NK(nbl)-1) = 0
 		endif
 			
-		call TDMAP(1,NK(nbl)-1,AP_COMP_IBM,AC_COMP_IBM,AM_COMP_IBM,RHS,NK(nbl)-1)
+		call TDMAP(1,NK(nbl)-1,AP_COMP_IBM(1:NK(nbl)-1),AC_COMP_IBM(1:NK(nbl)-1),AM_COMP_IBM(1:NK(nbl)-1),RHS,NK(nbl)-1)
 		
 		PHID(i,j,1:NK(nbl)-1,nbl,prim) = RHS(1:NK(nbl)-1)
 		PHID(i,j,NK(nbl),nbl,prim) = PHID(i,j,1,nbl,prim)
