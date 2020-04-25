@@ -69,6 +69,13 @@
 		  
 		  close(fcyl)
 		  
+		  !open(7, form = 'formatted', file = 'cylinder.txt')
+		  !write(7,*) 'x',',','y',',','z'
+		  !do node=1,nodes
+		  !write(7,'(*(G0.6,:,","))') xbg(node),ybg(node),zbg(node)
+		  !enddo
+		  !close(7)
+		  
 		  
 	  
       END
@@ -181,7 +188,7 @@
 		  allocate(flag_pi_alloc)
 		  allocate(flag_A_alloc)
 		  allocate(total_comp_pts)
-		  allocate(Qp_W(NImax,NJmax,NKmax,nblocks,nprims))
+		  allocate(Qp_W(nprims))
 		  allocate(AC_COMP_IBM(ptsmax))
 		  allocate(AP_COMP_IBM(ptsmax))
 		  allocate(AM_COMP_IBM(ptsmax))
@@ -322,9 +329,66 @@
 		  
 		  call boundary_intercept(xbg,ybg,zbg)
 	  	  
+		  !open(1, form = 'unformatted', file = 'ibm_grid.xyz')
+		  !write(1) nblocks
+		  !write(1) (NI(nbl), NJ(nbl), NK(nbl), nbl = 1, nblocks)
+		  !do nbl= 1, nblocks
+		  !	    write(1) ((( xgrid(i,j,k,nbl), i=1,NI(nbl)), j=1,NJ(nbl)), k=1,NK(nbl)), &
+		  !				 ((( ygrid(i,j,k,nbl), i=1,NI(nbl)), j=1,NJ(nbl)), k=1,NK(nbl)), &
+		  !				 ((( zgrid(i,j,k,nbl), i=1,NI(nbl)), j=1,NJ(nbl)), k=1,NK(nbl))
+		  !enddo
+		  !close(1)
+		  
+		  
+		  !open(2, form = 'formatted', file = 'bii.txt')
+		  !write(2,*) 'x',',','y',',','z'
+		  !do i=1,no_ghost_pts
+		  !write(2,'(*(G0.6,:,","))') BII(1,i),BII(2,i),BII(3,i)
+		  !enddo
+		  !close(2)
+		  
+		  !open(3, form = 'formatted', file = 'ibm_body.txt')
+		  !write(3,*) 'x',',','y',',','z'
+		  !do k=1,NK(nblocks)
+		  !do j=1,NJ(nblocks)
+		  !do i=1,NI(nblocks)
+		  !if(type_ibm(i,j,k,1).eq.0) then
+		  !write(3,'(*(G0.6,:,","))') Xgrid(i,j,k,1),Ygrid(i,j,k,1),Zgrid(i,j,k,1)
+		  !endif
+		  !enddo
+		  !enddo
+		  !enddo
+		  !close(3)
+		  
+		  
+		  !open(4, form = 'formatted', file = 'ibm_fluid.txt')
+		  !write(4,*) 'x',',','y',',','z'
+		  !do k=1,NK(nblocks)
+		  !do j=1,NJ(nblocks)
+		  !do i=1,NI(nblocks)
+		  !if(type_ibm(i,j,k,1).eq.1) then
+		  !write(4,'(*(G0.6,:,","))') Xgrid(i,j,k,1),Ygrid(i,j,k,1),Zgrid(i,j,k,1)
+		  !endif
+		  !enddo
+		  !enddo
+		  !enddo
+		  !close(4)
+		  
 		  call matrix_calculations()
 		  
 		  call boundary_fluid_points()
+		  
+		  !open(6, form = 'formatted', file = 'boundary_pts.txt')
+		  !write(6,*) 'x',',','y',',','z'
+		  !do i=1,no_bfp_pts
+		  !write(6,'(*(G0.6,:,","))') boundary_fluid_pts(1,i),boundary_fluid_pts(2,i),boundary_fluid_pts(3,i)
+		  !enddo
+		  !close(6)
+		  !print*,no_bfp_pts
+		  !do i = 1,no_bfp_pts
+		  ! print*, boundary_fluid_pts(1,i),boundary_fluid_pts(2,i),boundary_fluid_pts(3,i)
+		  !enddo
+		  
 
 	  END
 !********************************************************************************************
@@ -419,13 +483,6 @@ END
 					Qp(i,j,k,nbl,5) = 1.d0/(Mach**2.d0*gamma) +(1.d0/16.d0)*(cos(2.d0*xl)+ cos(2.d0*yl))*(cos(2.d0*zl)+2.d0)
 					Qp(i,j,k,nbl,6) = 1.d0           ! might be a logical error here.......temp=1k makes no sense
 					Qp(i,j,k,nbl,1) = gamma*Mach**2.d0*Qp(i,j,k,nbl,5)/Qp(i,j,k,nbl,6)
-					
-					Qp_W(i,j,k,nbl,1) = 0.d0 ! not sure
-					Qp_W(i,j,k,nbl,2) = 0.d0
-					Qp_W(i,j,k,nbl,3) = 0.d0
-					Qp_W(i,j,k,nbl,4) = 0.d0
-					Qp_W(i,j,k,nbl,5) = 0.d0
-					Qp_W(i,j,k,nbl,6) = 0.d0 ! not sure
 				
 					mu(i,j,k,nbl) = 1.d0
 					
@@ -442,6 +499,13 @@ END
 				  enddo
 				  enddo
 				  enddo
+				  
+				  Qp_W(1) = 0.d0 ! not sure
+				  Qp_W(2) = 0.d0
+				  Qp_W(3) = 0.d0
+				  Qp_W(4) = 0.d0
+				  Qp_W(5) = 0.d0
+				  Qp_W(6) = 0.d0 ! not sure
 				  
 				  call phi_gp(Qp_W,Qp,nprims,Qc,nconserv)
 		  
@@ -466,15 +530,7 @@ END
 					Qp(i,j,k,nbl,4) = 0.d0
 					Qp(i,j,k,nbl,5) = 1.d0/(Mach**2.d0*gamma) - 1/2.d0*vortex_strength**2*exp(-r_sq)
 					Qp(i,j,k,nbl,6) = 1.d0           ! might be a logical error here.......temp=1k makes no sense
-					Qp(i,j,k,nbl,1) = gamma*Mach**2.d0*Qp(i,j,k,nbl,5)/Qp(i,j,k,nbl,6)
-				
-					Qp_W(i,j,k,nbl,1) = 0.d0 ! not sure
-					Qp_W(i,j,k,nbl,2) = 0.d0
-					Qp_W(i,j,k,nbl,3) = 0.d0
-					Qp_W(i,j,k,nbl,4) = 0.d0
-					Qp_W(i,j,k,nbl,5) = 0.d0
-					Qp_W(i,j,k,nbl,6) = 0.d0 ! not sure
-				
+					Qp(i,j,k,nbl,1) = gamma*Mach**2.d0*Qp(i,j,k,nbl,5)/Qp(i,j,k,nbl,6)				
 				
 					mu(i,j,k,nbl) = 1.d0
 				
@@ -492,8 +548,15 @@ END
 				  enddo
 				  enddo
 				  
+				  Qp_W(1) = 0.d0 ! not sure
+				  Qp_W(2) = 0.d0
+				  Qp_W(3) = 0.d0
+				  Qp_W(4) = 0.d0
+				  Qp_W(5) = 0.d0
+				  Qp_W(6) = 0.d0 ! not sure
+
 				  call phi_gp(Qp_W,Qp,nprims,Qc,nconserv)
-		  
+
 			  endif
 			  
 		  elseif(restart.eq.1) then
