@@ -127,36 +127,56 @@ SUBROUTINE ghost_points()
 
 	
 	do nbl = 1,nblocks
-	do k = 1,NK(nbl)
-	do j = 1,NJ(nbl)
-	do i = 1,NI(nbl)
+	do k = 1,NK(nbl) ! for 2 D because there are only 3 pts in z dirn
+	do j = 2,NJ(nbl)-1
+	do i = 2,NI(nbl)-1
 	
 		if(type_ibm(i,j,k,nbl).eq.0) then
-			if(i+1.ne.NI(nbl)+1) then
+		
+			!if(i+1.ne.NI(nbl)+1) then
 				if(type_ibm(i+1,j,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'i+'
 					ghost_pt_iter = ghost_pt_iter + 1
-				endif
-			elseif(i-1.ne.0) then
-				if(type_ibm(i-1,j,k,nbl).eq.1) then
+					cycle
+					print*,'should not get printed'
+				!endif
+			!elseif(i-1.ne.0) then
+				elseif(type_ibm(i-1,j,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'i-'
 					ghost_pt_iter = ghost_pt_iter + 1
-				endif
-			elseif(j+1.ne.NJ(nbl)+1) then
-				if(type_ibm(i,j+1,k,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(j+1.ne.NJ(nbl)+1) then
+				elseif(type_ibm(i,j+1,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'j+'
 					ghost_pt_iter = ghost_pt_iter + 1
-				endif
-			elseif(j-1.ne.0) then
-				if(type_ibm(i,j-1,k,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(j-1.ne.0) then
+				elseif(type_ibm(i,j-1,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'j-'
 					ghost_pt_iter = ghost_pt_iter + 1
-				endif
-			elseif(k+1.ne.NK(nbl)+1) then
-				if(type_ibm(i,j,k+1,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(k+1.ne.NK(nbl)+1) then
+				elseif(type_ibm(i,j,k+1,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'k+'
 					ghost_pt_iter = ghost_pt_iter + 1
-				endif
-			elseif(k-1.ne.0) then
-				if(type_ibm(i,j,k-1,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(k-1.ne.0) then
+				elseif(type_ibm(i,j,k-1,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'k-'
 					ghost_pt_iter = ghost_pt_iter + 1
+					cycle
 				endif
-			endif
+			!endif
 		endif
 	
 	enddo
@@ -170,15 +190,18 @@ SUBROUTINE ghost_points()
 	allocate(ghost_pt_idx(no_ghost_pts))
 	
 	ghost_pt_iter = 0
+	flag1 = 0
 	
 	
 	do nbl = 1,nblocks
-	do k = 1,NK(nbl)
-	do j = 1,NJ(nbl)
-	do i = 1,NI(nbl)
+	do k = 1,NK(nbl) ! for 2 D because there are only 3 pts in z dirn
+	do j = 2,NJ(nbl)-1
+	do i = 2,NI(nbl)-1
 		if(type_ibm(i,j,k,nbl).eq.0) then
-			if(i+1.ne.NI(nbl)+1) then
+			!if(i+1.ne.NI(nbl)+1) then
 				if(type_ibm(i+1,j,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'i plus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -186,9 +209,13 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-				endif
-			elseif(i-1.ne.0) then
-				if(type_ibm(i-1,j,k,nbl).eq.1) then
+					cycle
+					print*,'this shouldnt be printed'
+				!endif
+			!elseif(i-1.ne.0) then
+				elseif(type_ibm(i-1,j,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'i minus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -196,9 +223,12 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-				endif
-			elseif(j+1.ne.NJ(nbl)+1) then
-				if(type_ibm(i,j+1,k,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(j+1.ne.NJ(nbl)+1) then
+				elseif(type_ibm(i,j+1,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'j plus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -206,9 +236,12 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-				endif
-			elseif(j-1.ne.0) then
-				if(type_ibm(i,j-1,k,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(j-1.ne.0) then
+				elseif(type_ibm(i,j-1,k,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'j minus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -216,9 +249,12 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-				endif
-			elseif(k+1.ne.NK(nbl)+1) then
-				if(type_ibm(i,j,k+1,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(k+1.ne.NK(nbl)+1) then
+				elseif(type_ibm(i,j,k+1,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'k plus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -226,9 +262,12 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-				endif
-			elseif(k-1.ne.0) then
-				if(type_ibm(i,j,k-1,nbl).eq.1) then
+					cycle
+				!endif
+			!elseif(k-1.ne.0) then
+				elseif(type_ibm(i,j,k-1,nbl).eq.1) then
+				!flag1 = flag1 + 1
+				!print*,flag1,'k minus'
 					type_ibm(i,j,k,nbl) = -1
 					ghost_pt_iter = ghost_pt_iter + 1
 					call get_global_index(i,j,k,nbl)
@@ -236,8 +275,9 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
+					cycle
 				endif
-			endif
+			!endif
 
 		endif
 	
@@ -484,9 +524,7 @@ SUBROUTINE matrix_calculations()
 
 	use declare_variables
 	implicit none
-	external dgesvd
-
-	
+	external dgesvd	
 	
 	integer nbrhd_pts,pp,qq,LWORK,INFO
 	real xbi,ybi,zbi,xgp,ygp,zgp
@@ -522,6 +560,16 @@ SUBROUTINE matrix_calculations()
 
 		allocate(prime_coord(3,total_comp_pts))
 		allocate(W(total_comp_pts,total_comp_pts))
+		W = 0
+		
+		!if(pp.eq.1) then
+		!open(5, form = 'formatted', file = 'vicinity_pts.txt')
+		!write(5,*) 'x',',','y',',','z'
+		!do i=1,no_vicinity_pts
+		!write(5,'(*(G0.6,:,","))') vicinity_pts(1,i),vicinity_pts(2,i),vicinity_pts(3,i)
+		!enddo
+		!close(5)
+		!endif
 		
 		xgp = ghost_pt(1,pp)
 		ygp = ghost_pt(2,pp)
@@ -530,6 +578,7 @@ SUBROUTINE matrix_calculations()
 		prime_coord(1,1) = xgp - xbi
 		prime_coord(2,1) = ygp - ybi
 		prime_coord(3,1) = zgp - zbi
+		!print*,prime_coord(3,1)
 		W(1,1) = 0.5*(1+cos(3.141*(prime_coord(1,1)**2+prime_coord(2,1)**2+prime_coord(3,1)**2)**0.5/R))
 
 		do qq = 2,total_comp_pts
@@ -538,7 +587,7 @@ SUBROUTINE matrix_calculations()
 			prime_coord(2,qq) = vicinity_pts(2,qq-1) - ybi
 			prime_coord(3,qq) = vicinity_pts(3,qq-1) - zbi
 			W(qq,qq) = 0.5*(1+cos(3.141*(prime_coord(1,qq)**2+prime_coord(2,qq)**2+prime_coord(3,qq)**2)**0.5/R))
-			
+
 		enddo
 
 		call ibm_coeff_vandermonde(prime_coord)
@@ -614,47 +663,49 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 	use declare_variables
 	implicit none
 	real,dimension(3,total_comp_pts) :: prime_coord
-	integer qq,pp
+	integer qq,pp,ndim
 	
+	ndim = 2
 	N_vandermonde = 3
 	
-	if(N_vandermonde.eq.1.and.n_dim.eq.2) then
+	if(N_vandermonde.eq.1.and.ndim.eq.2) then
 		L_N = 3
 
-	elseif(N_vandermonde.eq.1.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.1.and.ndim.eq.3) then
 		L_N = 4
 
-	elseif(N_vandermonde.eq.2.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.2.and.ndim.eq.2) then
 		L_N = 6
 
-	elseif(N_vandermonde.eq.2.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.2.and.ndim.eq.3) then
 		L_N = 10
 		
-	elseif(N_vandermonde.eq.3.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.3.and.ndim.eq.2) then
 		L_N = 10
 		
-	elseif(N_vandermonde.eq.3.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.3.and.ndim.eq.3) then
 		L_N = 20
 		
-	elseif(N_vandermonde.eq.4.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.4.and.ndim.eq.2) then
 		L_N = 15
 		
-	elseif(N_vandermonde.eq.4.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.4.and.ndim.eq.3) then
 		L_N = 35
 		
 	endif
 	
 	allocate(V(total_comp_pts,L_N))
+	V = 0
 	
 	
-	if(N_vandermonde.eq.1.and.n_dim.eq.2) then
+	if(N_vandermonde.eq.1.and.ndim.eq.2) then
 		L_N = 3
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
 		enddo
-	elseif(N_vandermonde.eq.1.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.1.and.ndim.eq.3) then
 		L_N = 4
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -662,7 +713,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,3) = prime_coord(2,qq)
 			V(qq,4) = prime_coord(3,qq)
 		enddo
-	elseif(N_vandermonde.eq.2.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.2.and.ndim.eq.2) then
 		L_N = 6
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -672,7 +723,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
 			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
 		enddo
-	elseif(N_vandermonde.eq.2.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.2.and.ndim.eq.3) then
 		L_N = 10
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -686,7 +737,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
 			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
 		enddo
-	elseif(N_vandermonde.eq.3.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.3.and.ndim.eq.2) then
 		L_N = 10
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -700,7 +751,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,9) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
 			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
 		enddo
-	elseif(N_vandermonde.eq.3.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.3.and.ndim.eq.3) then
 		L_N = 20
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -724,7 +775,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,19) = prime_coord(3,qq)*prime_coord(1,qq)**2
 			V(qq,20) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(3,qq)
 		enddo
-	elseif(N_vandermonde.eq.4.and.n_dim.eq.2) then
+	elseif(N_vandermonde.eq.4.and.ndim.eq.2) then
 		L_N = 15
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -743,7 +794,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,14) = prime_coord(1,qq)**2*prime_coord(2,qq)**2
 			V(qq,15) = prime_coord(1,qq)*prime_coord(2,qq)**3
 		enddo
-	elseif(N_vandermonde.eq.4.and.n_dim.eq.3) then
+	elseif(N_vandermonde.eq.4.and.ndim.eq.3) then
 		L_N = 35
 		do qq = 1,total_comp_pts
 			V(qq,1) = 1
@@ -796,7 +847,8 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 	implicit none
 	
 	integer nvars,pp,gg,i_l,j_l,k_l,nbl_l,nbrhd_pts,nvarsc
-	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI_W,PHI 
+	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI
+	real,dimension(nvars) :: PHI_W
 	real,dimension(NImax,NJmax,NKmax,nblocks,nvarsc) :: PHIC 
 	real xbi,ybi,zbi,x_normal,y_normal,z_normal,Etotal,norm,xgp,ygp,zgp
 
@@ -825,10 +877,12 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 		z_normal = (zbi-zgp)/norm
 
 		PHI(i_l,j_l,k_l,nbl_l,:) = 0
+		PHIC(i_l,j_l,k_l,nbl_l,:) = 0
+		!print*,no_vicinity_pts,dim_A(2,gg)
 
-		do pp = 2,no_vicinity_pts ! == dim_A(2,gg)-1
+		do pp = 2,dim_A(2,gg) ! == no_vicinity_pts+1
 			
-			call get_loc_index(vicinity_pt_idx(pp))
+			call get_loc_index(vicinity_pt_idx(pp-1)) ! all vicinity points from 1 to no_vicinity_pts
 			PHI(i_l,j_l,k_l,nbl_l,2) = PHI(i_l,j_l,k_l,nbl_l,2) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,2)
 			PHI(i_l,j_l,k_l,nbl_l,3) = PHI(i_l,j_l,k_l,nbl_l,3) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,3)
 			PHI(i_l,j_l,k_l,nbl_l,4) = PHI(i_l,j_l,k_l,nbl_l,4) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,4)
@@ -839,14 +893,23 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 
 		enddo
 
-		PHI(i_l,j_l,k_l,nbl_l,2) = (PHI_W(i_l,j_l,k_l,nbl_l,2) - PHI(i_l,j_l,k_l,nbl_l,2))/A_matrix(1,1,gg)
-		PHI(i_l,j_l,k_l,nbl_l,3) = (PHI_W(i_l,j_l,k_l,nbl_l,3) - PHI(i_l,j_l,k_l,nbl_l,3))/A_matrix(1,1,gg)
-		PHI(i_l,j_l,k_l,nbl_l,4) = (PHI_W(i_l,j_l,k_l,nbl_l,4) - PHI(i_l,j_l,k_l,nbl_l,4))/A_matrix(1,1,gg)
-		PHI(i_l,j_l,k_l,nbl_l,5) = (PHI_W(i_l,j_l,k_l,nbl_l,5) - PHI(i_l,j_l,k_l,nbl_l,5))/ &
+		PHI(i_l,j_l,k_l,nbl_l,2) = (PHI_W(2) - PHI(i_l,j_l,k_l,nbl_l,2))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,3) = (PHI_W(3) - PHI(i_l,j_l,k_l,nbl_l,3))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,4) = (PHI_W(4) - PHI(i_l,j_l,k_l,nbl_l,4))/A_matrix(1,1,gg)
+		PHI(i_l,j_l,k_l,nbl_l,5) = (PHI_W(5) - PHI(i_l,j_l,k_l,nbl_l,5))/ &
 			(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))
-		PHI(i_l,j_l,k_l,nbl_l,6) = (PHI_W(i_l,j_l,k_l,nbl_l,6) - PHI(i_l,j_l,k_l,nbl_l,6))/ &
+		PHI(i_l,j_l,k_l,nbl_l,6) = (PHI_W(6) - PHI(i_l,j_l,k_l,nbl_l,6))/ &
 			(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))	
 		PHI(i_l,j_l,k_l,nbl_l,1) = gamma*Mach**2.d0*PHI(i_l,j_l,k_l,nbl_l,5)/PHI(i_l,j_l,k_l,nbl_l,6)
+		
+		!PHI(i_l,j_l,k_l,nbl_l,2) = (0 - PHI(i_l,j_l,k_l,nbl_l,2))/A_matrix(1,1,gg)
+		!PHI(i_l,j_l,k_l,nbl_l,3) = (0 - PHI(i_l,j_l,k_l,nbl_l,3))/A_matrix(1,1,gg)
+		!PHI(i_l,j_l,k_l,nbl_l,4) = (0 - PHI(i_l,j_l,k_l,nbl_l,4))/A_matrix(1,1,gg)
+		!PHI(i_l,j_l,k_l,nbl_l,5) = (0 - PHI(i_l,j_l,k_l,nbl_l,5))/ &
+		!	(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))
+		!PHI(i_l,j_l,k_l,nbl_l,6) = (0 - PHI(i_l,j_l,k_l,nbl_l,6))/ &
+		!	(x_normal*A_matrix(2,1,gg)+y_normal*A_matrix(3,1,gg)+z_normal*A_matrix(4,1,gg))	
+		!PHI(i_l,j_l,k_l,nbl_l,1) = gamma*Mach**2.d0*PHI(i_l,j_l,k_l,nbl_l,5)/PHI(i_l,j_l,k_l,nbl_l,6)
 
 		PHIC(i_l,j_l,k_l,nbl_l,1) = PHI(i_l,j_l,k_l,nbl_l,1)
 		PHIC(i_l,j_l,k_l,nbl_l,2) = PHI(i_l,j_l,k_l,nbl_l,1)*PHI(i_l,j_l,k_l,nbl_l,2)
@@ -919,12 +982,12 @@ SUBROUTINE boundary_fluid_points()
 				bfp_temp = bfp_idx
 			endif
 		else
+			bfp_iter = bfp_iter + 1
 			boundary_fluid_pts_idx(bfp_iter) = bfp_idx
 			boundary_fluid_pts(1,bfp_iter) = bfp(1)
 			boundary_fluid_pts(2,bfp_iter) = bfp(2)
-			boundary_fluid_pts(3,bfp_iter) = bfp(3)
+			boundary_fluid_pts(3,bfp_iter) = bfp(3)			
 			bfp_temp = bfp_idx
-			bfp_iter = bfp_iter + 1
 		endif	
 		
 		deallocate(vicinity_pts)
@@ -958,10 +1021,12 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 		
 		
 		do i = 3,NI(nbl)-2
+		
 			if(type_ibm(i,j,k,nbl).eq.0) then ! body points
 				AM_COMP_IBM(i) = 0
 				AP_COMP_IBM(i) = 0
-				dscheme = 4
+				RHS(i) = 0
+				cycle
 			endif
 			if(type_ibm(i,j,k,nbl).eq.-1) then
 				dscheme = 3
@@ -978,8 +1043,10 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 				enddo 
 			endif
 			call DISCRETIZATION_FILTER_RK_VALS()
+			
 			RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
 					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
+			
 		Enddo
 	
 		if(type_ibm(1,j,k,nbl).eq.-1) then
@@ -1078,7 +1145,8 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 			if(type_ibm(i,j,k,nbl).eq.0) then
 				AM_COMP_IBM(j) = 0
 				AP_COMP_IBM(j) = 0
-				dscheme = 4
+				RHS(j) = 0
+				cycle
 			endif
 			if(type_ibm(i,j,k,nbl).eq.-1) then
 				dscheme = 3
@@ -1097,6 +1165,7 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 			call DISCRETIZATION_FILTER_RK_VALS()
 			RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
 							+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))	
+			
 		Enddo
 		
 		if(type_ibm(i,1,k,nbl).eq.-1) then
