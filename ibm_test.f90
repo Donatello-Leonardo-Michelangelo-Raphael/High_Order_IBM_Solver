@@ -510,7 +510,6 @@ SUBROUTINE nn_fluid(nbrhd_pts,x,y,z)
 	enddo
 
 	flag_nn_alloc = 1
-	
 
 	deallocate(results)
 	!print*,results(1)%idx
@@ -555,7 +554,7 @@ SUBROUTINE matrix_calculations()
 		zbi = BII(3,pp)
 
 		call nn_fluid(nbrhd_pts,xbi,ybi,zbi)
-
+	
 		total_comp_pts = no_vicinity_pts + 1
 
 		allocate(prime_coord(3,total_comp_pts))
@@ -591,6 +590,7 @@ SUBROUTINE matrix_calculations()
 		enddo
 
 		call ibm_coeff_vandermonde(prime_coord)
+		
 		allocate(p_i(total_comp_pts,L_N))
 
 		LWORK = max(1,5*min(total_comp_pts,L_N),3*min(total_comp_pts,L_N)+max(total_comp_pts,L_N))
@@ -719,8 +719,8 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,1) = 1
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
-			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)**2
+			V(qq,5) = prime_coord(2,qq)**2
 			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
 		enddo
 	elseif(N_vandermonde.eq.2.and.ndim.eq.3) then
@@ -730,9 +730,9 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
 			V(qq,4) = prime_coord(3,qq)
-			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)**2
+			V(qq,6) = prime_coord(2,qq)**2
+			V(qq,7) = prime_coord(3,qq)**2
 			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
 			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
 			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
@@ -743,13 +743,13 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,1) = 1
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
-			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)**2
+			V(qq,5) = prime_coord(2,qq)**2
 			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
-			V(qq,7) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,8) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,9) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,7) = prime_coord(1,qq)**3
+			V(qq,8) = prime_coord(2,qq)**3
+			V(qq,9) = prime_coord(1,qq)**2*prime_coord(2,qq)
+			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*2
 		enddo
 	elseif(N_vandermonde.eq.3.and.ndim.eq.3) then
 		L_N = 20
@@ -758,9 +758,9 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
 			V(qq,4) = prime_coord(3,qq)
-			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)**2
+			V(qq,6) = prime_coord(2,qq)**2
+			V(qq,7) = prime_coord(3,qq)**2
 			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
 			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
 			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
@@ -781,13 +781,13 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,1) = 1
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
-			V(qq,4) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,5) = prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,4) = prime_coord(1,qq)**2
+			V(qq,5) = prime_coord(2,qq)**2
 			V(qq,6) = prime_coord(2,qq)*prime_coord(1,qq)
-			V(qq,7) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,8) = prime_coord(2,qq)*prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,9) = prime_coord(1,qq)*prime_coord(1,qq)*prime_coord(2,qq)
-			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)*prime_coord(2,qq)
+			V(qq,7) = prime_coord(1,qq)**3
+			V(qq,8) = prime_coord(2,qq)**3
+			V(qq,9) = prime_coord(1,qq)**2*prime_coord(2,qq)
+			V(qq,10) = prime_coord(1,qq)*prime_coord(2,qq)**2
 			V(qq,11) = prime_coord(1,qq)**4
 			V(qq,12) = prime_coord(2,qq)**4
 			V(qq,13) = prime_coord(1,qq)**3*prime_coord(2,qq)
@@ -801,9 +801,9 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 			V(qq,2) = prime_coord(1,qq)
 			V(qq,3) = prime_coord(2,qq)
 			V(qq,4) = prime_coord(3,qq)
-			V(qq,5) = prime_coord(1,qq)*prime_coord(1,qq)
-			V(qq,6) = prime_coord(2,qq)*prime_coord(2,qq)
-			V(qq,7) = prime_coord(3,qq)*prime_coord(3,qq)
+			V(qq,5) = prime_coord(1,qq)**2
+			V(qq,6) = prime_coord(2,qq)**2
+			V(qq,7) = prime_coord(3,qq)**2
 			V(qq,8) = prime_coord(1,qq)*prime_coord(2,qq)
 			V(qq,9) = prime_coord(2,qq)*prime_coord(3,qq)
 			V(qq,10) = prime_coord(3,qq)*prime_coord(1,qq)
@@ -926,7 +926,7 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 
 	enddo
 	
-	
+
 END
 
 
@@ -1011,8 +1011,8 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 	
 	
 	AC_COMP_IBM(1:ptsmax) = 1.d0
-	AP_COMP_IBM(1:ptsmax) = alpha
-	AM_COMP_IBM(1:ptsmax) = alpha
+	AP_COMP_IBM(1:ptsmax) = 1.d0/3.d0
+	AM_COMP_IBM(1:ptsmax) = 1.d0/3.d0
 	
 	do prim = 1,nvars
 	do nbl = 1,nblocks
@@ -1024,93 +1024,63 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 		
 			if(type_ibm(i,j,k,nbl).eq.0) then ! body points
 				AM_COMP_IBM(i) = 0
+				AC_COMP_IBM(i) = 1
 				AP_COMP_IBM(i) = 0
 				RHS(i) = 0
 				cycle
-			endif
-			if(type_ibm(i,j,k,nbl).eq.-1) then
-				dscheme = 3
+			elseif(type_ibm(i,j,k,nbl).eq.-1) then ! ghost points
+				AM_COMP_IBM(i) = 0
+				AC_COMP_IBM(i) = 1
+				AP_COMP_IBM(i) = 2 
+				RHS(i) = -5.d0/2.d0*PHI(i,j,k,nbl,prim) + 2.d0*PHI(i+1,j,k,nbl,prim) + 1.d0/2.d0*PHI(i+2,j,k,nbl,prim)
+				cycle
 			elseif(type_ibm(i,j,k,nbl).eq.1) then
+				RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
+					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
 				do node = 1,no_bfp_pts
 					call get_loc_index(boundary_fluid_pts_idx(node))
 					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
-						dscheme = 3
-						exit 
-					else
-						dscheme = 4
-						exit
+						AM_COMP_IBM(i) = 1.d0/4.d0
+						AC_COMP_IBM(i) = 1
+						AP_COMP_IBM(i) = 1.d0/4.d0
+						RHS(i) = -3.d0/4.d0*PHI(i-1,j,k,nbl,prim) + 3.d0/4.d0*PHI(i+1,j,k,nbl,prim) 
+						exit	
 					endif
 				enddo 
-			endif
-			call DISCRETIZATION_FILTER_RK_VALS()
 			
-			RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
-					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
+			endif
 			
 		Enddo
 	
-		if(type_ibm(1,j,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(1,j,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(1) = (bdisc/4.d0)*(PHI(3,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim))
-	
-		if(type_ibm(2,j,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(2,j,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(2) = (bdisc/4.d0)*(PHI(4,j,k,nbl,prim)-PHI(NI(nbl)-1,j,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(3,j,k,nbl,prim)-PHI(1,j,k,nbl,prim))
+		AM_COMP_IBM(1) = 0
+		AC_COMP_IBM(1) = 1
+		AP_COMP_IBM(1) = 2 
+		RHS(1) = -5.d0/2.d0*PHI(1,j,k,nbl,prim) + 2.d0*PHI(2,j,k,nbl,prim) + 1.d0/2.d0*PHI(3,j,k,nbl,prim)
 		
-		if(type_ibm(NI(nbl)-2,j,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(NI(nbl)-2,j,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(NI(nbl)-2) = (bdisc/4.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-4,j,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(NI(nbl)-1,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim))
 		
-		if(type_ibm(NI(nbl)-1,j,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(NI(nbl)-1,j,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(NI(nbl)-1) = (bdisc/4.d0)*(PHI(2,j,k,nbl,prim)-PHI(NI(nbl)-3,j,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(1,j,k,nbl,prim)-PHI(NI(nbl)-2,j,k,nbl,prim))
-	
-		if(type_ibm(1,j,k,nbl).eq.0) then
-			AM_COMP_IBM(1) = 0
-			AP_COMP_IBM(1) = 0
-		elseif(type_ibm(2,j,k,nbl).eq.0) then
-			AM_COMP_IBM(2) = 0
-			AP_COMP_IBM(2) = 0
-		elseif(type_ibm(NI(nbl)-2,j,k,nbl).eq.0) then
-			AM_COMP_IBM(NI(nbl)-2) = 0
-			AP_COMP_IBM(NI(nbl)-2) = 0
-		elseif(type_ibm(NI(nbl)-1,j,k,nbl).eq.0) then
-			AM_COMP_IBM(NI(nbl)-1) = 0
-			AP_COMP_IBM(NI(nbl)-1) = 0
-		endif
+		AM_COMP_IBM(2) = 1.d0/4.d0
+		AC_COMP_IBM(2) = 1
+		AP_COMP_IBM(2) = 1.d0/4.d0
+		RHS(2) = -3.d0/4.d0*PHI(1,j,k,nbl,prim) + 3.d0/4.d0*PHI(3,j,k,nbl,prim) 
+			
 		
-		call TDMAP(1,NI(nbl)-1,AP_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)-1),AM_COMP_IBM(1:NI(nbl)-1),RHS,NI(nbl)-1)
+		AM_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
+		AC_COMP_IBM(NI(nbl)-1) = 1
+		AP_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
+		RHS(NI(nbl)-1) = 3.d0/4.d0*PHI(NI(nbl),j,k,nbl,prim) - 3.d0/4.d0*PHI(NI(nbl)-2,j,k,nbl,prim) 
+			
 		
-		PHID(1:NI(nbl)-1,j,k,nbl,prim) = RHS(1:NI(nbl)-1)
-		PHID(NI(nbl),j,k,nbl,prim) = PHID(1,j,k,nbl,prim)
+		AM_COMP_IBM(NI(nbl)) = 2
+		AC_COMP_IBM(NI(nbl)) = 1
+		AP_COMP_IBM(NI(nbl)) = 0 
+		RHS(NI(nbl)) = 5.d0/2.d0*PHI(NI(nbl),j,k,nbl,prim) - 2.d0*PHI(NI(nbl)-1,j,k,nbl,prim) - 1.d0/2.d0*PHI(NI(nbl)-2,j,k,nbl,prim) 
+			
+		! super diagonal AP_COMP_IBM(2:NI(nbl))
+		! diagonal       AC_COMP_IBM(1:NI(nbl))
+		! subdiagonal    AM_COMP_IBM(1:NI(nbl)-1)
+		
+		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,PHID(1:NI(nbl),j,k,nbl,prim),NI(nbl))
+		
 	  
 	enddo
 	enddo
@@ -1142,102 +1112,72 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 	 
 	 
 		Do j = 3,NJ(nbl)-2
-			if(type_ibm(i,j,k,nbl).eq.0) then
+			
+			if(type_ibm(i,j,k,nbl).eq.0) then ! body points
 				AM_COMP_IBM(j) = 0
+				AC_COMP_IBM(j) = 1
 				AP_COMP_IBM(j) = 0
 				RHS(j) = 0
 				cycle
-			endif
-			if(type_ibm(i,j,k,nbl).eq.-1) then
-				dscheme = 3
+			elseif(type_ibm(i,j,k,nbl).eq.-1) then ! ghost points
+				AM_COMP_IBM(j) = 0
+				AC_COMP_IBM(j) = 1
+				AP_COMP_IBM(j) = 2 
+				RHS(j) = -5.d0/2.d0*PHI(i,j,k,nbl,prim) + 2.d0*PHI(i,j+1,k,nbl,prim) + 1.d0/2.d0*PHI(i,j+2,k,nbl,prim) 
+				cycle
 			elseif(type_ibm(i,j,k,nbl).eq.1) then
+				RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
+					+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))
 				do node = 1,no_bfp_pts
 					call get_loc_index(boundary_fluid_pts_idx(node))
 					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
-						dscheme = 3
-						exit 
-					else
-						dscheme = 4
-						exit
+						AM_COMP_IBM(j) = 1.d0/4.d0
+						AC_COMP_IBM(j) = 1
+						AP_COMP_IBM(j) = 1.d0/4.d0
+						RHS(j) = -3.d0/4.d0*PHI(i,j-1,k,nbl,prim) + 3.d0/4.d0*PHI(i,j+1,k,nbl,prim)
+						exit	
 					endif
 				enddo 
+			
 			endif
-			call DISCRETIZATION_FILTER_RK_VALS()
-			RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
-							+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))	
 			
 		Enddo
 		
-		if(type_ibm(i,1,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(i,1,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(1) = (bdisc/4.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim))
+		AM_COMP_IBM(1) = 0
+		AC_COMP_IBM(1) = 1
+		AP_COMP_IBM(1) = 2 
+		RHS(1) = -5.d0/2.d0*PHI(i,1,k,nbl,prim) + 2.d0*PHI(i,2,k,nbl,prim) + 1.d0/2.d0*PHI(i,3,k,nbl,prim) 
 		
-		if(type_ibm(i,2,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(i,2,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(2) = (bdisc/4.d0)*(PHI(i,4,k,nbl,prim)-PHI(i,NJ(nbl)-1,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,3,k,nbl,prim)-PHI(i,1,k,nbl,prim))
 		
-		if(type_ibm(i,NJ(nbl)-2,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(i,NJ(nbl)-2,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(NJ(nbl)-2) = (bdisc/4.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-4,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,NJ(nbl)-1,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim))
+		AM_COMP_IBM(2) = 1.d0/4.d0
+		AC_COMP_IBM(2) = 1
+		AP_COMP_IBM(2) = 1.d0/4.d0
+		RHS(2) = -3.d0/4.d0*PHI(i,1,k,nbl,prim)+ 3.d0/4.d0*PHI(i,3,k,nbl,prim) 			
 		
-		if(type_ibm(i,NJ(nbl)-1,k,nbl).eq.-1) then
-			dscheme = 3
-		elseif(type_ibm(i,NJ(nbl)-1,k,nbl).eq.1) then
-			dscheme = 4
-		else
-			dscheme = 4
-		endif
-		call DISCRETIZATION_FILTER_RK_VALS()
-		RHS(NJ(nbl)-1) = (bdisc/4.d0)*(PHI(i,2,k,nbl,prim)-PHI(i,NJ(nbl)-3,k,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,1,k,nbl,prim)-PHI(i,NJ(nbl)-2,k,nbl,prim))
-						
-		if(type_ibm(i,1,k,nbl).eq.0) then
-			AM_COMP_IBM(1) = 0
-			AP_COMP_IBM(1) = 0
-		elseif(type_ibm(i,2,k,nbl).eq.0) then
-			AM_COMP_IBM(2) = 0
-			AP_COMP_IBM(2) = 0
-		elseif(type_ibm(i,NJ(nbl)-2,k,nbl).eq.0) then
-			AM_COMP_IBM(NJ(nbl)-2) = 0
-			AP_COMP_IBM(NJ(nbl)-2) = 0
-		elseif(type_ibm(i,NJ(nbl)-1,k,nbl).eq.0) then
-			AM_COMP_IBM(NJ(nbl)-1) = 0
-			AP_COMP_IBM(NJ(nbl)-1) = 0
-		endif
+		AM_COMP_IBM(NJ(nbl)-1) = 1.d0/4.d0
+		AC_COMP_IBM(NJ(nbl)-1) = 1
+		AP_COMP_IBM(NJ(nbl)-1) = 1.d0/4.d0
+		RHS(NJ(nbl)-1) = 3.d0/4.d0*PHI(i,NJ(nbl),k,nbl,prim) - 3.d0/4.d0*PHI(i,NJ(nbl)-2,k,nbl,prim)
+		
+		AM_COMP_IBM(NJ(nbl)) = 2
+		AC_COMP_IBM(NJ(nbl)) = 1
+		AP_COMP_IBM(NJ(nbl)) = 0 
+		RHS(NJ(nbl)) = 5.d0/2.d0*PHI(i,NJ(nbl),k,nbl,prim) - 2.d0*PHI(i,NJ(nbl)-1,k,nbl,prim) - 1.d0/2.d0*PHI(i,NJ(nbl)-2,k,nbl,prim) 
+		
+		! super diagonal AP_COMP_IBM(2:NI(nbl))
+		! diagonal       AC_COMP_IBM(1:NI(nbl))
+		! subdiagonal    AM_COMP_IBM(1:NI(nbl)-1)
 
-		call TDMAP(1,NJ(nbl)-1,AP_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AM_COMP_IBM(1:NJ(nbl)),RHS,NJ(nbl)-1)
+		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,PHID(i,1:NJ(nbl),k,nbl,prim),NJ(nbl))
 		
-		PHID(i,1:NJ(nbl)-1,k,nbl,prim) = RHS(1:NJ(nbl)-1)
-		PHID(i,NJ(nbl),k,nbl,prim) = PHID(i,1,k,nbl,prim)
-	  
-	    enddo
-		enddo
-		enddo
-		enddo
 		
+	enddo
+	enddo
+	enddo
+	enddo
+	
 
-	  
+	
 END
 
 
@@ -1259,46 +1199,160 @@ SUBROUTINE DISCRETIZATION_K_COMP_IBM(PHI,PHID,nvars)
 	do i = 1,Ni(nbl)
 		
 		do k = 3,NK(nbl)-2
-			RHS(k) = (bdisc/4.d0)*(PHI(i,j,k+2,nbl,prim)-PHI(i,j,k-2,nbl,prim)) &
-							+ (adisc/2.d0)*(PHI(i,j,k+1,nbl,prim)-PHI(i,j,k-1,nbl,prim))
-			if(type_ibm(i,j,k,nbl).eq.0) then
-				AM_COMP_IBM(k) = 0
-				AP_COMP_IBM(k) = 0
-			endif
+			! insert here
 			
 		enddo
 		
-		RHS(1) = (bdisc/4.d0)*(PHI(i,j,3,nbl,prim)-PHI(i,j,NK(nbl)-2,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,j,2,nbl,prim)-PHI(i,j,NK(nbl)-1,nbl,prim))
-		RHS(2) = (bdisc/4.d0)*(PHI(i,j,4,nbl,prim)-PHI(i,j,NK(nbl)-1,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,j,3,nbl,prim)-PHI(i,j,1,nbl,prim))
-		RHS(NK(nbl)-2) = (bdisc/4.d0)*(PHI(i,j,1,nbl,prim)-PHI(i,j,NK(nbl)-4,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,j,NK(nbl)-1,nbl,prim)-PHI(i,j,NK(nbl)-3,nbl,prim))
-		RHS(NK(nbl)-1) = (bdisc/4.d0)*(PHI(i,j,2,nbl,prim)-PHI(i,j,NK(nbl)-3,nbl,prim)) &
-						+ (adisc/2.d0)*(PHI(i,j,1,nbl,prim)-PHI(i,j,NK(nbl)-2,nbl,prim))
-			
-		if(type_ibm(i,j,1,nbl).eq.0) then
-			AM_COMP_IBM(1) = 0
-			AP_COMP_IBM(1) = 0
-		elseif(type_ibm(i,j,2,nbl).eq.0) then
-			AM_COMP_IBM(2) = 0
-			AP_COMP_IBM(2) = 0
-		elseif(type_ibm(i,j,NK(nbl)-2,nbl).eq.0) then
-			AM_COMP_IBM(NK(nbl)-2) = 0
-			AP_COMP_IBM(NK(nbl)-2) = 0
-		elseif(type_ibm(i,j,NK(nbl)-1,nbl).eq.0) then
-			AM_COMP_IBM(NK(nbl)-1) = 0
-			AP_COMP_IBM(NK(nbl)-1) = 0
-		endif
-			
+		! insert here
+		
+		! super diagonal AP_COMP_IBM(2:NI(nbl))
+		! diagonal       AC_COMP_IBM(1:NI(nbl))
+		! subdiagonal    AM_COMP_IBM(1:NI(nbl)-1)
+		
 		call TDMAP(1,NK(nbl)-1,AP_COMP_IBM(1:NK(nbl)-1),AC_COMP_IBM(1:NK(nbl)-1),AM_COMP_IBM(1:NK(nbl)-1),RHS,NK(nbl)-1)
 		
-		PHID(i,j,1:NK(nbl)-1,nbl,prim) = RHS(1:NK(nbl)-1)
-		PHID(i,j,NK(nbl),nbl,prim) = PHID(i,j,1,nbl,prim)
+		PHID(i,j,1:NK(nbl),nbl,prim) = RHS(1:NK(nbl))
 	 
 	enddo
 	enddo
 	enddo
 	enddo
  
+END
+
+
+SUBROUTINE DISC_I_COMP_GRID_IBM(PHI,PHID)
+		use declare_variables
+		implicit none
+		
+		integer prim,nvars
+		real,dimension(NImax,NJmax,NKmax,nblocks) :: PHI,PHID
+		real,dimension(NImax) :: RHS
+		real LL
+		
+		AC_COMP_IBM(1:ptsmax) = 1.d0
+		AP_COMP_IBM(1:ptsmax) = 1.d0/3.d0
+		AM_COMP_IBM(1:ptsmax) = 1.d0/3.d0
+		
+		do nbl = 1,nblocks
+		do k = 1,NK(nbl)
+		do j = 1,NJ(nbl)
+		
+		do i = 3,NI(nbl)-2
+		RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl)-PHI(i-2,j,k,nbl)) &
+					 + (adisc/2.d0)*(PHI(i+1,j,k,nbl)-PHI(i-1,j,k,nbl))
+		enddo
+		
+		LL = PHI(NI(nbl),j,k,nbl) - PHI(1,j,k,nbl)
+		
+		AM_COMP_IBM(1) = 0
+		AC_COMP_IBM(1) = 1
+		AP_COMP_IBM(1) = 2 
+		RHS(1) = -5.d0/2.d0*PHI(1,j,k,nbl) + 2.d0*PHI(2,j,k,nbl) + 1.d0/2.d0*PHI(3,j,k,nbl)
+		
+		AM_COMP_IBM(2) = 1.d0/4.d0
+		AC_COMP_IBM(2) = 1
+		AP_COMP_IBM(2) = 1.d0/4.d0
+		RHS(2) = -3.d0/4.d0*PHI(1,j,k,nbl) + 3.d0/4.d0*PHI(3,j,k,nbl) 
+		
+		AM_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
+		AC_COMP_IBM(NI(nbl)-1) = 1
+		AP_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
+		RHS(NI(nbl)-1) = 3.d0/4.d0*PHI(NI(nbl),j,k,nbl) - 3.d0/4.d0*PHI(NI(nbl)-2,j,k,nbl) 
+		
+		AM_COMP_IBM(NI(nbl)) = 2
+		AC_COMP_IBM(NI(nbl)) = 1
+		AP_COMP_IBM(NI(nbl)) = 0 
+		RHS(NI(nbl)) = 5.d0/2.d0*PHI(NI(nbl),j,k,nbl) - 2.d0*PHI(NI(nbl)-1,j,k,nbl) - 1.d0/2.d0*PHI(NI(nbl)-2,j,k,nbl) 
+		
+		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,PHID(1:NI(nbl),j,k,nbl),NI(nbl))
+		
+		
+		enddo
+		enddo
+		enddo
+	  
+END
+
+
+SUBROUTINE DISC_J_COMP_GRID_IBM(PHI,PHID)
+		use declare_variables
+		implicit none
+		
+		integer prim,nvars
+		real,dimension(NImax,NJmax,NKmax,nblocks) :: PHI,PHID
+		real,dimension(NJmax) :: RHS
+		real LL
+		
+		AC_COMP_IBM(1:ptsmax) = 1.d0
+		AP_COMP_IBM(1:ptsmax) = 1.d0/3.d0
+		AM_COMP_IBM(1:ptsmax) = 1.d0/3.d0
+		
+		do nbl = 1,nblocks
+		do k = 1,NK(nbl)
+		do i = 1,NI(nbl)
+		
+		do j = 3,Nj(nbl)-2
+		RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl)-PHI(i,j-2,k,nbl)) &
+					 + (adisc/2.d0)*(PHI(i,j+1,k,nbl)-PHI(i,j-1,k,nbl))
+		enddo
+		
+		LL = PHI(i,NJ(nbl),k,nbl) - PHI(i,1,k,nbl)
+		
+		AM_COMP_IBM(1) = 0
+		AC_COMP_IBM(1) = 1
+		AP_COMP_IBM(1) = 2 
+		RHS(1) = -5.d0/2.d0*PHI(i,1,k,nbl) + 2.d0*PHI(i,2,k,nbl) + 1.d0/2.d0*PHI(i,3,k,nbl)
+		
+		AM_COMP_IBM(2) = 1.d0/4.d0
+		AC_COMP_IBM(2) = 1
+		AP_COMP_IBM(2) = 1.d0/4.d0
+		RHS(2) = -3.d0/4.d0*PHI(i,1,k,nbl) + 3.d0/4.d0*PHI(i,3,k,nbl) 
+		
+		AM_COMP_IBM(NJ(nbl)-1) = 1.d0/4.d0
+		AC_COMP_IBM(NJ(nbl)-1) = 1
+		AP_COMP_IBM(NJ(nbl)-1) = 1.d0/4.d0
+		RHS(NJ(nbl)-1) = 3.d0/4.d0*PHI(i,NJ(nbl),k,nbl) - 3.d0/4.d0*PHI(i,NJ(nbl)-2,k,nbl) 
+		
+		AM_COMP_IBM(NJ(nbl)) = 2
+		AC_COMP_IBM(NJ(nbl)) = 1
+		AP_COMP_IBM(NJ(nbl)) = 0 
+		RHS(NJ(nbl)) = 5.d0/2.d0*PHI(i,NJ(nbl),k,nbl) - 2.d0*PHI(i,NJ(nbl)-1,k,nbl) - 1.d0/2.d0*PHI(i,NJ(nbl)-2,k,nbl) 
+		
+		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,PHID(i,1:NJ(nbl),k,nbl),NJ(nbl))
+		
+		
+		enddo
+		enddo
+		enddo
+	  
+END
+
+
+SUBROUTINE TDMA(a_arr,b_arr,c_arr,d_arr,x_arr,N_arr) 
+! verified in scrap
+! validation case https://matlabgeeks.weebly.com/uploads/8/0/4/8/8048228/thomas_algorithm_and_tridiagonal_matrix-_example.pdf
+
+	use declare_variables
+	implicit none
+	
+	integer :: N_arr,diag
+	real :: a_arr(N_arr-1),c_arr(N_arr-1)
+	real :: b_arr(N_arr),d_arr(N_arr),x_arr(N_arr)
+	real :: w_arr
+	
+	do diag = 1,N_arr-1
+		w_arr = a_arr(diag)/b_arr(diag)
+		b_arr(diag+1) = b_arr(diag+1) - w_arr*c_arr(diag)
+		d_arr(diag+1) = d_arr(diag+1) - w_arr*d_arr(diag)
+	enddo
+	
+	x_arr(N_arr) = d_arr(N_arr)/b_arr(N_arr)
+	
+	do diag = N_arr-1,1,-1
+		x_arr(diag) = (d_arr(diag) - c_arr(diag)*x_arr(diag+1))/b_arr(diag)
+	enddo
+
+
+
 END
