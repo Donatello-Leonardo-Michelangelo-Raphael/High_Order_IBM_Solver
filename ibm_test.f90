@@ -138,7 +138,7 @@ SUBROUTINE ghost_points()
 				!flag1 = flag1 + 1
 				!print*,flag1,'i+'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 					print*,'should not get printed'
 				!endif
 			!elseif(i-1.ne.0) then
@@ -146,35 +146,35 @@ SUBROUTINE ghost_points()
 				!flag1 = flag1 + 1
 				!print*,flag1,'i-'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 				!endif
 			!elseif(j+1.ne.NJ(nbl)+1) then
 				elseif(type_ibm(i,j+1,k,nbl).eq.1) then
 				!flag1 = flag1 + 1
 				!print*,flag1,'j+'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 				!endif
 			!elseif(j-1.ne.0) then
 				elseif(type_ibm(i,j-1,k,nbl).eq.1) then
 				!flag1 = flag1 + 1
 				!print*,flag1,'j-'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 				!endif
 			!elseif(k+1.ne.NK(nbl)+1) then
 				elseif(type_ibm(i,j,k+1,nbl).eq.1) then
 				!flag1 = flag1 + 1
 				!print*,flag1,'k+'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 				!endif
 			!elseif(k-1.ne.0) then
 				elseif(type_ibm(i,j,k-1,nbl).eq.1) then
 				!flag1 = flag1 + 1
 				!print*,flag1,'k-'
 					ghost_pt_iter = ghost_pt_iter + 1
-					cycle
+					!cycle
 				endif
 			!endif
 		endif
@@ -209,7 +209,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 					print*,'this shouldnt be printed'
 				!endif
 			!elseif(i-1.ne.0) then
@@ -223,7 +223,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 				!endif
 			!elseif(j+1.ne.NJ(nbl)+1) then
 				elseif(type_ibm(i,j+1,k,nbl).eq.1) then
@@ -236,7 +236,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 				!endif
 			!elseif(j-1.ne.0) then
 				elseif(type_ibm(i,j-1,k,nbl).eq.1) then
@@ -249,7 +249,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 				!endif
 			!elseif(k+1.ne.NK(nbl)+1) then
 				elseif(type_ibm(i,j,k+1,nbl).eq.1) then
@@ -262,7 +262,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 				!endif
 			!elseif(k-1.ne.0) then
 				elseif(type_ibm(i,j,k-1,nbl).eq.1) then
@@ -275,7 +275,7 @@ SUBROUTINE ghost_points()
 					ghost_pt(1,ghost_pt_iter) = Xgrid(i,j,k,nbl)
 					ghost_pt(2,ghost_pt_iter) = Ygrid(i,j,k,nbl)
 					ghost_pt(3,ghost_pt_iter) = Zgrid(i,j,k,nbl)
-					cycle
+					!cycle
 				endif
 			!endif
 
@@ -528,13 +528,13 @@ SUBROUTINE matrix_calculations()
 	integer nbrhd_pts,pp,qq,LWORK,INFO
 	real xbi,ybi,zbi,xgp,ygp,zgp
 	real,allocatable :: prime_coord(:,:)
-	real(dp),allocatable :: S(:),U(:,:),VT(:,:),WORK(:),p_inv(:,:)
-	real(dp),allocatable :: sig(:),sig_plus(:,:)
+	real(dp),allocatable :: S(:),U(:,:),VT(:,:),WORK(:),p_inv(:,:),p_i_check(:,:)
+	real(dp),allocatable :: sig(:),sig_plus(:,:),sig_check(:,:)
 	real(dp) dummy(1,1)
 	character(len=1),allocatable :: JOBU,JOBVT
 	
 	nbrhd_pts = 59
-	total_comp_pts = nbrhd_pts+1 ! +1 ghost point
+	!total_comp_pts = nbrhd_pts+1 ! +1 ghost point
 	flag_nn_alloc = 0
 	flag_vandermonde_alloc = 0
 	flag_pi_alloc = 0
@@ -560,7 +560,7 @@ SUBROUTINE matrix_calculations()
 		allocate(prime_coord(3,total_comp_pts))
 		allocate(W(total_comp_pts,total_comp_pts))
 		W = 0
-		
+		prime_coord = 0
 		!if(pp.eq.1) then
 		!open(5, form = 'formatted', file = 'vicinity_pts.txt')
 		!write(5,*) 'x',',','y',',','z'
@@ -592,23 +592,33 @@ SUBROUTINE matrix_calculations()
 		call ibm_coeff_vandermonde(prime_coord)
 		
 		allocate(p_i(total_comp_pts,L_N))
+		allocate(p_i_check(total_comp_pts,L_N))
 
 		LWORK = max(1,5*min(total_comp_pts,L_N),3*min(total_comp_pts,L_N)+max(total_comp_pts,L_N))
-
+		p_i = 0
 		p_i = matmul(W,V)
 
 		allocate(S(min(total_comp_pts,L_N)))
 		allocate(U(total_comp_pts,min(L_N,total_comp_pts)))
 		allocate(VT(min(L_N,total_comp_pts),L_N))
 		
+		S = 0
+		U = 0
+		VT = 0
+		
 		allocate(sig(min(total_comp_pts,L_N)))
 		allocate(sig_plus(min(total_comp_pts,L_N),min(total_comp_pts,L_N)))
+		allocate(sig_check(min(total_comp_pts,L_N),min(total_comp_pts,L_N)))
+		
+		sig = 0
+		sig_plus = 0
+		sig_check = 0
 		
 		dim_A(1,pp) = L_N
 		dim_A(2,pp) = total_comp_pts
 		
-		sig_plus = 0
-
+		!print*,'og   ',p_i(16,2)
+		
 		LWORK = -1
 		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i, &
 			total_comp_pts,S,U,total_comp_pts,VT,min(L_N,total_comp_pts),dummy,LWORK,INFO)
@@ -618,9 +628,18 @@ SUBROUTINE matrix_calculations()
 		call dgesvd(JOBU,JOBVT,total_comp_pts,L_N,p_i, &
 			total_comp_pts,S,U,total_comp_pts,VT,min(L_N,total_comp_pts),WORK,LWORK,INFO)
 
+		sig_check = 0
+		do i = 1,min(L_N,total_comp_pts)
+				sig(i) = s(i)
+				sig_check(i,i) = sig(i)
+		enddo
+		p_i_check = matmul(matmul(U,sig_check),VT)
+		!print*,'check',p_i_check(16,2)
+		
+		sig_plus = 0
 		do i = 1,min(L_N,total_comp_pts)
 			if(s(i).le.10e-6) then
-				sig(i) = 0
+				sig(i) = 0 ! https://www.johndcook.com/blog/2018/05/05/svd/
 				sig_plus(i,i) = sig(i)
 			elseif(s(i).ge.10e-6) then
 				sig(i) = s(i)
@@ -647,6 +666,9 @@ SUBROUTINE matrix_calculations()
 		
 		deallocate(vicinity_pts)
 		deallocate(vicinity_pt_idx)
+		
+		deallocate(sig_check)
+		deallocate(p_i_check)
 	
 	enddo
 
@@ -666,7 +688,7 @@ SUBROUTINE ibm_coeff_vandermonde(prime_coord)
 	integer qq,pp,ndim
 	
 	ndim = 2
-	N_vandermonde = 3
+	N_vandermonde = 1
 	
 	if(N_vandermonde.eq.1.and.ndim.eq.2) then
 		L_N = 3
@@ -883,6 +905,8 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 		do pp = 2,dim_A(2,gg) ! == no_vicinity_pts+1
 			
 			call get_loc_index(vicinity_pt_idx(pp-1)) ! all vicinity points from 1 to no_vicinity_pts
+			!print*,PHI(i_l,j_l,k_l,nbl_l,2)
+			!print*,i_l,i_loc
 			PHI(i_l,j_l,k_l,nbl_l,2) = PHI(i_l,j_l,k_l,nbl_l,2) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,2)
 			PHI(i_l,j_l,k_l,nbl_l,3) = PHI(i_l,j_l,k_l,nbl_l,3) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,3)
 			PHI(i_l,j_l,k_l,nbl_l,4) = PHI(i_l,j_l,k_l,nbl_l,4) + A_matrix(1,pp,gg)*PHI(i_loc,j_loc,k_loc,nbl_loc,4)
@@ -892,7 +916,8 @@ SUBROUTINE phi_gp(PHI_W,PHI,nvars,PHIC,nvarsc)
 				+z_normal*A_matrix(4,pp,gg))*PHI(i_loc,j_loc,k_loc,nbl_loc,6)
 
 		enddo
-
+		!print*,'**********************************'
+		!print*,PHI_W(1),PHI_W(2),PHI_W(3),PHI_W(4),PHI_W(5),PHI_W(6)
 		PHI(i_l,j_l,k_l,nbl_l,2) = (PHI_W(2) - PHI(i_l,j_l,k_l,nbl_l,2))/A_matrix(1,1,gg)
 		PHI(i_l,j_l,k_l,nbl_l,3) = (PHI_W(3) - PHI(i_l,j_l,k_l,nbl_l,3))/A_matrix(1,1,gg)
 		PHI(i_l,j_l,k_l,nbl_l,4) = (PHI_W(4) - PHI(i_l,j_l,k_l,nbl_l,4))/A_matrix(1,1,gg)
@@ -1008,6 +1033,7 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 	integer prim,nvars,node
 	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
 	real,dimension(NImax) :: RHS
+	real X_sol(NImax)
 	
 	
 	AC_COMP_IBM(1:ptsmax) = 1.d0
@@ -1027,17 +1053,17 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 				AC_COMP_IBM(i) = 1
 				AP_COMP_IBM(i) = 0
 				RHS(i) = 0
-				cycle
+				!cycle
 			elseif(type_ibm(i,j,k,nbl).eq.-1) then ! ghost points
 				AM_COMP_IBM(i) = 0
 				AC_COMP_IBM(i) = 1
 				AP_COMP_IBM(i) = 2 
 				RHS(i) = -5.d0/2.d0*PHI(i,j,k,nbl,prim) + 2.d0*PHI(i+1,j,k,nbl,prim) + 1.d0/2.d0*PHI(i+2,j,k,nbl,prim)
-				cycle
+				!cycle
 			elseif(type_ibm(i,j,k,nbl).eq.1) then
 				RHS(i) = (bdisc/4.d0)*(PHI(i+2,j,k,nbl,prim)-PHI(i-2,j,k,nbl,prim)) &
 					+ (adisc/2.d0)*(PHI(i+1,j,k,nbl,prim)-PHI(i-1,j,k,nbl,prim))
-				do node = 1,no_bfp_pts
+				do node = 1,no_bfp_pts ! boundary fluid pts
 					call get_loc_index(boundary_fluid_pts_idx(node))
 					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
 						AM_COMP_IBM(i) = 1.d0/4.d0
@@ -1062,25 +1088,26 @@ SUBROUTINE DISCRETIZATION_I_COMP_IBM(PHI,PHID,nvars)
 		AC_COMP_IBM(2) = 1
 		AP_COMP_IBM(2) = 1.d0/4.d0
 		RHS(2) = -3.d0/4.d0*PHI(1,j,k,nbl,prim) + 3.d0/4.d0*PHI(3,j,k,nbl,prim) 
-			
+		
 		
 		AM_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
 		AC_COMP_IBM(NI(nbl)-1) = 1
 		AP_COMP_IBM(NI(nbl)-1) = 1.d0/4.d0
 		RHS(NI(nbl)-1) = 3.d0/4.d0*PHI(NI(nbl),j,k,nbl,prim) - 3.d0/4.d0*PHI(NI(nbl)-2,j,k,nbl,prim) 
-			
+		
 		
 		AM_COMP_IBM(NI(nbl)) = 2
 		AC_COMP_IBM(NI(nbl)) = 1
 		AP_COMP_IBM(NI(nbl)) = 0 
 		RHS(NI(nbl)) = 5.d0/2.d0*PHI(NI(nbl),j,k,nbl,prim) - 2.d0*PHI(NI(nbl)-1,j,k,nbl,prim) - 1.d0/2.d0*PHI(NI(nbl)-2,j,k,nbl,prim) 
-			
+		
 		! super diagonal AP_COMP_IBM(2:NI(nbl))
 		! diagonal       AC_COMP_IBM(1:NI(nbl))
 		! subdiagonal    AM_COMP_IBM(1:NI(nbl)-1)
 		
-		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,PHID(1:NI(nbl),j,k,nbl,prim),NI(nbl))
+		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,X_sol(1:NI(nbl)),NI(nbl))
 		
+		PHID(1:NI(nbl),j,k,nbl,prim) = X_sol(1:NI(nbl))
 	  
 	enddo
 	enddo
@@ -1099,6 +1126,7 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 	integer prim,nvars,node
 	real,dimension(NImax,NJmax,NKmax,nblocks,nvars) :: PHI,PHID
 	real,dimension(NJmax) :: RHS
+	real X_sol(NJmax)
 	
 	AC_COMP_IBM(1:ptsmax) = 1.d0
 	AP_COMP_IBM(1:ptsmax) = alpha
@@ -1118,17 +1146,17 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 				AC_COMP_IBM(j) = 1
 				AP_COMP_IBM(j) = 0
 				RHS(j) = 0
-				cycle
+				!cycle
 			elseif(type_ibm(i,j,k,nbl).eq.-1) then ! ghost points
 				AM_COMP_IBM(j) = 0
 				AC_COMP_IBM(j) = 1
 				AP_COMP_IBM(j) = 2 
 				RHS(j) = -5.d0/2.d0*PHI(i,j,k,nbl,prim) + 2.d0*PHI(i,j+1,k,nbl,prim) + 1.d0/2.d0*PHI(i,j+2,k,nbl,prim) 
-				cycle
+				!cycle
 			elseif(type_ibm(i,j,k,nbl).eq.1) then
 				RHS(j) = (bdisc/4.d0)*(PHI(i,j+2,k,nbl,prim)-PHI(i,j-2,k,nbl,prim)) &
 					+ (adisc/2.d0)*(PHI(i,j+1,k,nbl,prim)-PHI(i,j-1,k,nbl,prim))
-				do node = 1,no_bfp_pts
+				do node = 1,no_bfp_pts ! boundary fluid pts
 					call get_loc_index(boundary_fluid_pts_idx(node))
 					if(i.eq.i_loc.and.j.eq.j_loc.and.k.eq.k_loc.and.nbl.eq.nbl_loc) then
 						AM_COMP_IBM(j) = 1.d0/4.d0
@@ -1168,8 +1196,9 @@ SUBROUTINE DISCRETIZATION_J_COMP_IBM(PHI,PHID,nvars)
 		! diagonal       AC_COMP_IBM(1:NI(nbl))
 		! subdiagonal    AM_COMP_IBM(1:NI(nbl)-1)
 
-		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,PHID(i,1:NJ(nbl),k,nbl,prim),NJ(nbl))
+		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,X_sol(1:NJ(nbl)),NJ(nbl))
 		
+		PHID(i,1:NJ(nbl),k,nbl,prim) = X_sol(NJ(nbl))
 		
 	enddo
 	enddo
@@ -1228,7 +1257,7 @@ SUBROUTINE DISC_I_COMP_GRID_IBM(PHI,PHID)
 		integer prim,nvars
 		real,dimension(NImax,NJmax,NKmax,nblocks) :: PHI,PHID
 		real,dimension(NImax) :: RHS
-		real LL
+		real LL,X_sol(NImax)
 		
 		AC_COMP_IBM(1:ptsmax) = 1.d0
 		AP_COMP_IBM(1:ptsmax) = 1.d0/3.d0
@@ -1265,7 +1294,9 @@ SUBROUTINE DISC_I_COMP_GRID_IBM(PHI,PHID)
 		AP_COMP_IBM(NI(nbl)) = 0 
 		RHS(NI(nbl)) = 5.d0/2.d0*PHI(NI(nbl),j,k,nbl) - 2.d0*PHI(NI(nbl)-1,j,k,nbl) - 1.d0/2.d0*PHI(NI(nbl)-2,j,k,nbl) 
 		
-		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,PHID(1:NI(nbl),j,k,nbl),NI(nbl))
+		call TDMA(AM_COMP_IBM(1:NI(nbl)-1),AC_COMP_IBM(1:NI(nbl)),AP_COMP_IBM(2:NI(nbl)),RHS,X_sol(1:NI(nbl)),NI(nbl))
+		
+		PHID(1:NI(nbl),j,k,nbl) = X_sol(1:NI(nbl))
 		
 		
 		enddo
@@ -1282,7 +1313,7 @@ SUBROUTINE DISC_J_COMP_GRID_IBM(PHI,PHID)
 		integer prim,nvars
 		real,dimension(NImax,NJmax,NKmax,nblocks) :: PHI,PHID
 		real,dimension(NJmax) :: RHS
-		real LL
+		real LL,X_sol(NJmax)
 		
 		AC_COMP_IBM(1:ptsmax) = 1.d0
 		AP_COMP_IBM(1:ptsmax) = 1.d0/3.d0
@@ -1319,8 +1350,9 @@ SUBROUTINE DISC_J_COMP_GRID_IBM(PHI,PHID)
 		AP_COMP_IBM(NJ(nbl)) = 0 
 		RHS(NJ(nbl)) = 5.d0/2.d0*PHI(i,NJ(nbl),k,nbl) - 2.d0*PHI(i,NJ(nbl)-1,k,nbl) - 1.d0/2.d0*PHI(i,NJ(nbl)-2,k,nbl) 
 		
-		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,PHID(i,1:NJ(nbl),k,nbl),NJ(nbl))
+		call TDMA(AM_COMP_IBM(1:NJ(nbl)-1),AC_COMP_IBM(1:NJ(nbl)),AP_COMP_IBM(2:NJ(nbl)),RHS,X_sol(1:NJ(nbl)),NJ(nbl))
 		
+		PHID(i,1:NJ(nbl),k,nbl) = X_sol(1:NJ(nbl))
 		
 		enddo
 		enddo
@@ -1356,3 +1388,4 @@ SUBROUTINE TDMA(a_arr,b_arr,c_arr,d_arr,x_arr,N_arr)
 
 
 END
+
